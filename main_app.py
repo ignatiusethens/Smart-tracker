@@ -18,48 +18,112 @@ custom_css = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
 
-    html, body, [class*="css"]  {
+    /* Global Font & Background */
+    html, body, [class*="css"] {
         font-family: 'Outfit', sans-serif;
     }
-    
     .stApp {
-        background-color: #0f172a; /* Slate 900 */
+        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
         color: #f8fafc;
     }
-    
-    h1, h2, h3 {
-        color: #e2e8f0;
-    }
 
+    /* Hide Streamlit Native Branding */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+
+    /* Sidebar Glassmorphism */
     [data-testid="stSidebar"] {
-        background-color: #1e293b; /* Slate 800 */
-        border-right: 1px solid #334155;
-    }
-
-    div[data-testid="stMetricValue"] {
-        color: #38bdf8; /* Light blue */
-        font-weight: 800;
-        font-size: 2.5rem;
+        background-color: rgba(15, 23, 42, 0.5) !important;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
     }
     
+    /* Input Fields (Widgets) Styling for Premium Look */
+    div[data-baseweb="input"] > div, 
+    div[data-baseweb="select"] > div, 
+    div[data-baseweb="number-input"] > div {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 10px !important;
+        transition: all 0.3s ease;
+        color: white;
+    }
+    div[data-baseweb="input"] > div:focus-within, 
+    div[data-baseweb="select"] > div:focus-within {
+        border-color: #38bdf8 !important;
+        box-shadow: 0 0 10px rgba(56, 189, 248, 0.3) !important;
+    }
+
+    /* Button Styling */
+    div.stButton > button:first-child {
+        background: linear-gradient(90deg, #38bdf8 0%, #3b82f6 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        padding: 10px 24px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
+        width: 100%;
+    }
+    div.stButton > button:first-child:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+        color: white;
+    }
+    div.stButton > button:first-child:active {
+        transform: translateY(0);
+    }
+
+    /* Metric Cards Glassmorphism */
+    div[data-testid="stMetricValue"] {
+        color: #38bdf8;
+        font-weight: 800;
+        font-size: 2.8rem;
+    }
     div[data-testid="stMetricLabel"] {
         color: #94a3b8;
         font-size: 1.1rem;
         font-weight: 600;
     }
-
-    .css-1r6slb0, .css-1y4p8pa { /* Metric container styling */
-        background: rgba(30, 41, 59, 0.7);
-        border: 1px solid #334155;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    .css-1r6slb0, .css-1y4p8pa, div[data-testid="metric-container"] {
+        background: rgba(255, 255, 255, 0.02);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .css-1r6slb0:hover, .css-1y4p8pa:hover, div[data-testid="metric-container"]:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .css-1r6slb0:hover, .css-1y4p8pa:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+    /* Mobile Responsiveness & Container Spacing */
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+        max-width: 1200px;
+    }
+    
+    @media (max-width: 768px) {
+        .block-container {
+            padding-top: 1rem !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
+        /* Make fonts slightly smaller on mobile */
+        div[data-testid="stMetricValue"] {
+            font-size: 2.2rem;
+        }
+        h1 {
+            font-size: 1.8rem !important;
+        }
     }
 </style>
 """
