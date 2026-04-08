@@ -200,12 +200,13 @@ col_form, col_settings = st.columns([2, 1])
 with col_form:
     with st.expander("➕ Record New Expense", expanded=True):
         with st.form("expense_form", clear_on_submit=True):
-            amount = st.number_input("Amount ($)", min_value=0.01, format="%f")
+            amount = st.number_input("Amount (Ksh)", min_value=1.0, format="%f")
             date_input = st.date_input("Date", value=datetime.date.today())
             description = st.text_input("Description", placeholder="e.g. Coffee at Campus")
             category = st.selectbox("Category", [
                 "Food & Dining", "Transport", "Academics", 
-                "Entertainment", "Rent", "Utilities", "Other"
+                "Entertainment", "Rent", "Utilities", 
+                "Photography & Tech Gear", "Logistics & Business", "Other"
             ])
             
             submitted = st.form_submit_button("Add Expense", use_container_width=True)
@@ -218,15 +219,15 @@ with col_form:
                     category=category
                 )
                 db.add_expense(new_expense)
-                st.success(f"Added {category} expense of ${amount:.2f}")
+                st.success(f"Added {category} expense of Ksh {amount:,.2f}")
                 st.rerun()
 
 with col_settings:
     with st.expander("⚙️ Budget Settings & Account", expanded=True):
         if 'monthly_budget' not in st.session_state:
-            st.session_state['monthly_budget'] = 1000.0
+            st.session_state['monthly_budget'] = 15000.0
             
-        budget_input = st.number_input("Monthly Budget ($)", value=st.session_state['monthly_budget'], step=50.0)
+        budget_input = st.number_input("Monthly Budget (Ksh)", value=st.session_state['monthly_budget'], step=1000.0)
         if budget_input != st.session_state['monthly_budget']:
             st.session_state['monthly_budget'] = budget_input
             st.rerun()
@@ -248,23 +249,29 @@ monthly_budget = st.session_state['monthly_budget']
 total_spent = analyzer.get_total_expenses()
 budget_used_pct = analyzer.get_budget_status_percentage(monthly_budget)
 
+projected_spend = analyzer.get_projected_spending()
+
 # Budget Alerts
 if budget_used_pct >= 100:
-    st.error(f"🚨 **Over Budget!** You have spent ${total_spent:.2f}, exceeding your budget of ${monthly_budget:.2f}.")
+    st.error(f"🚨 **Over Budget!** You have spent Ksh {total_spent:,.2f}, exceeding your budget of Ksh {monthly_budget:,.2f}.")
 elif budget_used_pct >= 80:
     st.warning(f"⚠️ **Warning!** You have spent {budget_used_pct:.1f}% of your budget. Slow down on spending!")
+elif projected_spend > monthly_budget:
+    st.warning(f"🔥 **Burn Rate Alert:** At your current daily pace, you are projected to spend Ksh {projected_spend:,.2f} this month, crossing your limit!")
 elif total_spent > 0:
-    st.success(f"✅ **On Track!** You've spent {budget_used_pct:.1f}% of your budget. Keep it up!")
+    st.success(f"✅ **On Track!** You've spent {budget_used_pct:.1f}% of your budget, and your burn rate is healthy.")
 
 # KPIs / Metrics
 st.markdown("<br>", unsafe_allow_html=True)
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 with col1:
-    st.metric(label="Total Expenses", value=f"${total_spent:,.2f}")
+    st.metric(label="Total Expenses", value=f"Ksh {total_spent:,.0f}")
 with col2:
     remaining = max(0, monthly_budget - total_spent)
-    st.metric(label="Remaining Budget", value=f"${remaining:,.2f}")
+    st.metric(label="Remaining Budget", value=f"Ksh {remaining:,.0f}")
 with col3:
+    st.metric(label="Burn Rate (Projected)", value=f"Ksh {projected_spend:,.0f}")
+with col4:
     st.metric(label="Budget Utilization", value=f"{budget_used_pct:.1f}%")
 
 st.markdown("<br><hr>", unsafe_allow_html=True)
@@ -310,7 +317,7 @@ with col_chart2:
             plot_bgcolor="rgba(0,0,0,0)",
             font_color="#e2e8f0",
             xaxis_title="Date",
-            yaxis_title="Amount ($)"
+            yaxis_title="Amount (Ksh)"
         )
         st.plotly_chart(fig_bar, use_container_width=True)
     else:
@@ -335,7 +342,7 @@ if expenses_list:
             "date": st.column_config.DateColumn("Date"),
             "category": st.column_config.TextColumn("Category"),
             "description": st.column_config.TextColumn("Description"),
-            "amount": st.column_config.NumberColumn("Amount ($)", format="$%.2f")
+            "amount": st.column_config.NumberColumn("Amount (Ksh)", format="Ksh %.2f")
         }
     )
 else:

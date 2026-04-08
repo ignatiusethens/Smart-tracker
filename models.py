@@ -2,6 +2,7 @@ import pandas as pd
 from dataclasses import dataclass
 from typing import List, Dict, Optional
 from datetime import date
+import calendar
 
 @dataclass
 class Expense:
@@ -65,3 +66,25 @@ class BudgetAnalyzer:
         if monthly_budget <= 0:
             return 0.0
         return (self.get_total_expenses() / monthly_budget) * 100
+
+    def get_daily_average_this_month(self) -> float:
+        """Returns the average daily spending for the current month."""
+        if self.df.empty:
+            return 0.0
+            
+        today = date.today()
+        # Filter for current month's expenses
+        current_month_df = self.df[(self.df['date_obj'].dt.month == today.month) & (self.df['date_obj'].dt.year == today.year)]
+        
+        if current_month_df.empty:
+            return 0.0
+            
+        total_this_month = float(current_month_df['amount'].sum())
+        return total_this_month / today.day
+        
+    def get_projected_spending(self) -> float:
+        """Projects the total spending for the current month based on current burn rate."""
+        today = date.today()
+        daily_avg = self.get_daily_average_this_month()
+        days_in_month = calendar.monthrange(today.year, today.month)[1]
+        return daily_avg * days_in_month
