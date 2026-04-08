@@ -12,6 +12,7 @@ class Expense:
     date: str
     description: str
     category: str
+    user_id: int
     id: Optional[int] = None
 
 class BudgetAnalyzer:

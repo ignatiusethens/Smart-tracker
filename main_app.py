@@ -66,19 +66,73 @@ custom_css = """
 st.markdown(custom_css, unsafe_allow_html=True)
 
 # --- INITIALIZATION ---
+# Safe caching is hard with db engine, so we'll init each run. SQLAlchemy handles pooling.
 db = DatabaseManager()
 
-def load_data():
-    expenses_list = db.get_all_expenses()
+# --- AUTH LOGIC ---
+if 'user_id' not in st.session_state:
+    st.session_state['user_id'] = None
+if 'username' not in st.session_state:
+    st.session_state['username'] = None
+
+if st.session_state['user_id'] is None:
+    # --- LOGIN & REGISTER PAGE ---
+    st.title("🎓 Smart Tracking Portal")
+    st.markdown("Please log in or register below to securely access your private dashboard.")
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        tab1, tab2 = st.tabs(["Login", "Register"])
+        
+        with tab1:
+            with st.form("login_form"):
+                l_username = st.text_input("Username")
+                l_password = st.text_input("Password", type="password")
+                if st.form_submit_button("Login", use_container_width=True):
+                    user_id = db.verify_user(l_username, l_password)
+                    if user_id:
+                        st.session_state['user_id'] = user_id
+                        st.session_state['username'] = l_username
+                        st.rerun()
+                    else:
+                        st.error("Invalid username or password.")
+                        
+        with tab2:
+            with st.form("register_form"):
+                r_username = st.text_input("Choose Username")
+                r_password = st.text_input("Create Password", type="password")
+                r_confirm = st.text_input("Confirm Password", type="password")
+                if st.form_submit_button("Register", use_container_width=True):
+                    if r_password != r_confirm:
+                        st.error("Passwords do not match!")
+                    elif len(r_password) < 4:
+                        st.error("Password must be at least 4 characters long.")
+                    elif not r_username:
+                        st.error("Username cannot be empty")
+                    else:
+                        success = db.create_user(r_username, r_password)
+                        if success:
+                            st.success("Account created! Please switch to the Login tab.")
+                        else:
+                            st.error("Username already exists. Please choose another.")
+    
+    # Stop execution here if not logged in
+    st.stop()
+
+
+# --- DASHBOARD LOGIC (When Logged In) ---
+user_id = st.session_state['user_id']
+
+def load_data(uid):
+    expenses_list = db.get_all_expenses(uid)
     analyzer = BudgetAnalyzer(expenses_list)
     return expenses_list, analyzer
 
-expenses_list, analyzer = load_data()
+expenses_list, analyzer = load_data(user_id)
 
 # --- SIDEBAR: INPUT FORM ---
 with st.sidebar:
-    st.title("🎓 Expense Entry")
-    st.markdown("Record a new expense to keep your budget on track.")
+    st.title(f"🎓 {st.session_state['username']}'s Wallet")
     
     with st.form("expense_form", clear_on_submit=True):
         amount = st.number_input("Amount ($)", min_value=0.01, format="%f")
@@ -92,6 +146,7 @@ with st.sidebar:
         submitted = st.form_submit_button("Add Expense", use_container_width=True)
         if submitted:
             new_expense = Expense(
+                user_id=user_id,
                 amount=amount,
                 date=date_input.strftime("%Y-%m-%d"),
                 description=description,
@@ -99,12 +154,10 @@ with st.sidebar:
             )
             db.add_expense(new_expense)
             st.success(f"Added {category} expense of ${amount:.2f}")
-            # Rerun to update the dashboard immediately
             st.rerun()
             
     st.divider()
-    st.title("💰 Budget Settings")
-    # Store budget in session state to persist it during session
+    st.subheader("💰 Budget Settings")
     if 'monthly_budget' not in st.session_state:
         st.session_state['monthly_budget'] = 1000.0
         
@@ -112,10 +165,16 @@ with st.sidebar:
     if budget_input != st.session_state['monthly_budget']:
         st.session_state['monthly_budget'] = budget_input
         st.rerun()
+        
+    st.divider()
+    if st.button("🚪 Logout", use_container_width=True):
+        st.session_state['user_id'] = None
+        st.session_state['username'] = None
+        st.rerun()
 
 # --- MAIN DASHBOARD ---
 st.title("Smart Student Expense Tracker")
-st.markdown("Manage your limited income beautifully and prevent overspending. 🚀")
+st.markdown("Monitor your personal finances and prevent overspending. 🚀")
 
 monthly_budget = st.session_state['monthly_budget']
 total_spent = analyzer.get_total_expenses()
@@ -194,14 +253,12 @@ st.markdown("<br><hr>", unsafe_allow_html=True)
 # Data Table Section
 st.subheader("Recent Expenses Data")
 if expenses_list:
-    # Convert nicely to a pandas DataFrame for Streamlit table display
     df_display = pd.DataFrame([vars(e) for e in expenses_list])
-    # Drop internal ID for display
-    df_display = df_display.drop(columns=['id'])
+    # Drop internal data structure columns
+    df_display = df_display.drop(columns=['id', 'user_id'])
     # Reorder columns
     df_display = df_display[['date', 'category', 'description', 'amount']]
     
-    # Optional styling for amounts (Streamlit natively supports some styling)
     st.dataframe(
         df_display, 
         use_container_width=True,

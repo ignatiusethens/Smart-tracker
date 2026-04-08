@@ -39,5 +39,12 @@ A modern, fast, and interactive web application designed to help university stud
 
 5. **Interact:** The application will open automatically in your browser (usually `http://localhost:8501`). Start inputting expenses via the sidebar!
 
-## Future Scalability
-The backend object-oriented structure makes it trivial to replace SQLite with PostgreSQL, or to inject bank parsing APIs into the `BudgetAnalyzer` in the future.
+## PostgreSQL Production Ready
+By default, the application will create a local `expenses.db` SQLite database inside this folder.
+To scale up automatically using a real cloud database (like Neon or Supabase), simply set the `DATABASE_URL` environment variable or add it to `.streamlit/secrets.toml`:
+
+```bash
+export DATABASE_URL="postgresql://user:password@host/dbname"
+```
+The python backend automatically converts and connects via `SQLAlchemy`.
+
