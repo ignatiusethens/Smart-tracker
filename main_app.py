@@ -201,84 +201,58 @@ def load_data(uid):
 
 expenses_list, analyzer = load_data(user_id)
 
-# --- EXPENSE & SETTINGS CONTROLS ---
-col_form, col_settings = st.columns([2, 1])
-
-with col_form:
-    with st.expander("➕ Record New Expense", expanded=True):
-        with st.form("expense_form", clear_on_submit=True):
-            amt_val = st.session_state.get('parsed_amount', 1.0)
-            desc_val = st.session_state.get('parsed_vendor', "")
-            
-            amount = st.number_input("Amount (Ksh)", min_value=1.0, value=amt_val, format="%f")
-            date_input = st.date_input("Date", value=datetime.date.today())
-            description = st.text_input("Description", value=desc_val, placeholder="e.g. Coffee at Campus")
-            category = st.selectbox("Category", [
-                "Food & Dining", "Transport", "Academics", 
-                "Entertainment", "Rent", "Utilities", 
-                "Photography & Tech Gear", "Logistics & Business", "Other"
-            ])
-            
-            submitted = st.form_submit_button("Add Expense", use_container_width=True)
-            if submitted:
-                new_expense = Expense(
-                    user_id=user_id,
-                    amount=amount,
-                    date=date_input.strftime("%Y-%m-%d"),
-                    description=description,
-                    category=category
-                )
-                if 'parsed_amount' in st.session_state:
-                    del st.session_state['parsed_amount']
-                if 'parsed_vendor' in st.session_state:
-                    del st.session_state['parsed_vendor']
-                db.add_expense(new_expense)
-                st.success(f"Added {category} expense of Ksh {amount:,.2f}")
-                st.rerun()
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("### 📱 M-Pesa Auto-Fill")
-    st.markdown("Paste your Safaricom message here to auto-fill the manual form above.")
-    with st.form("mpesa_form", clear_on_submit=True):
-        col_sms, col_btn = st.columns([3, 1])
-        with col_sms:
-            sms_text = st.text_input("Paste SMS", placeholder="e.g. Ksh150.00 paid to VENDOR X on 10/10...", label_visibility="collapsed")
-        with col_btn:
-            submitted = st.form_submit_button("Parse SMS", use_container_width=True)
-            
+# --- EXPENSE CONTROLS ---
+with st.expander("➕ Record New Expense", expanded=True):
+    with st.form("expense_form", clear_on_submit=True):
+        amt_val = st.session_state.get('parsed_amount', 1.0)
+        desc_val = st.session_state.get('parsed_vendor', "")
+        
+        amount = st.number_input("Amount (Ksh)", min_value=1.0, value=amt_val, format="%f")
+        date_input = st.date_input("Date", value=datetime.date.today())
+        description = st.text_input("Description", value=desc_val, placeholder="e.g. Coffee at Campus")
+        category = st.selectbox("Category", [
+            "Food & Dining", "Transport", "Academics", 
+            "Entertainment", "Rent", "Utilities", 
+            "Photography & Tech Gear", "Logistics & Business", "Other"
+        ])
+        
+        submitted = st.form_submit_button("Add Expense", use_container_width=True)
         if submitted:
-            amount_match = re.search(r'Ksh\s*([\d,]+\.?\d*)', sms_text, re.IGNORECASE)
-            vendor_match = re.search(r'(?:paid to|sent to)\s*(.*?)\s*on', sms_text, re.IGNORECASE)
-            if amount_match:
-                st.session_state['parsed_amount'] = float(amount_match.group(1).replace(',', ''))
-            if vendor_match:
-                st.session_state['parsed_vendor'] = vendor_match.group(1).strip()
+            new_expense = Expense(
+                user_id=user_id,
+                amount=amount,
+                date=date_input.strftime("%Y-%m-%d"),
+                description=description,
+                category=category
+            )
+            if 'parsed_amount' in st.session_state:
+                del st.session_state['parsed_amount']
+            if 'parsed_vendor' in st.session_state:
+                del st.session_state['parsed_vendor']
+            db.add_expense(new_expense)
+            st.success(f"Added {category} expense of Ksh {amount:,.2f}")
             st.rerun()
 
-with col_settings:
-    with st.expander("⚙️ Budget Settings & Account", expanded=True):
-        if 'monthly_budget' not in st.session_state:
-            st.session_state['monthly_budget'] = 15000.0
-            
-        budget_input = st.number_input("Monthly Budget (Ksh)", value=st.session_state['monthly_budget'], step=1000.0)
-        if budget_input != st.session_state['monthly_budget']:
-            st.session_state['monthly_budget'] = budget_input
-            st.rerun()
-            
-        st.divider()
-        st.markdown(f"**Logged in as:** `{st.session_state['username']}`")
-        if st.button("🚪 Logout", use_container_width=True):
-            st.session_state['user_id'] = None
-            st.session_state['username'] = None
-            st.rerun()
+st.markdown("<br>", unsafe_allow_html=True)
+st.markdown("### 📱 M-Pesa Auto-Fill")
+st.markdown("Paste your Safaricom message here to auto-fill the manual form above.")
+with st.form("mpesa_form", clear_on_submit=True):
+    col_sms, col_btn = st.columns([3, 1])
+    with col_sms:
+        sms_text = st.text_input("Paste SMS", placeholder="e.g. Ksh150.00 paid to VENDOR X on 10/10...", label_visibility="collapsed")
+    with col_btn:
+        submitted = st.form_submit_button("Parse SMS", use_container_width=True)
+        
+    if submitted:
+        amount_match = re.search(r'Ksh\s*([\d,]+\.?\d*)', sms_text, re.IGNORECASE)
+        vendor_match = re.search(r'(?:paid to|sent to)\s*(.*?)\s*on', sms_text, re.IGNORECASE)
+        if amount_match:
+            st.session_state['parsed_amount'] = float(amount_match.group(1).replace(',', ''))
+        if vendor_match:
+            st.session_state['parsed_vendor'] = vendor_match.group(1).strip()
+        st.rerun()
 
-st.markdown("<br><hr>", unsafe_allow_html=True)
-
-# --- MAIN DASHBOARD ---
-st.title("Smart Student Expense Tracker")
-st.markdown("Monitor your personal finances and prevent overspending. 🚀")
-
-dash_tab, funds_tab = st.tabs(["📊 Dashboard View", "💰 Sinking Funds & Goals"])
+dash_tab, funds_tab, settings_tab = st.tabs(["📊 Dashboard View", "💰 Sinking Funds & Goals", "⚙️ Account & Settings"])
 
 with dash_tab:
     monthly_budget = st.session_state['monthly_budget']
@@ -422,3 +396,23 @@ with funds_tab:
                         st.success(f"Added Ksh {add_amt} to {g.name}!")
                         st.rerun()
             st.markdown("<br>", unsafe_allow_html=True)
+
+with settings_tab:
+    st.header("⚙️ Budget Settings & Account")
+    st.markdown("Manage your baseline tracking settings and active session.")
+    
+    with st.expander("Monthly Budget Control", expanded=True):
+        if 'monthly_budget' not in st.session_state:
+            st.session_state['monthly_budget'] = 15000.0
+            
+        budget_input = st.number_input("Monthly Budget (Ksh)", value=st.session_state['monthly_budget'], step=1000.0)
+        if budget_input != st.session_state['monthly_budget']:
+            st.session_state['monthly_budget'] = budget_input
+            st.rerun()
+            
+    with st.expander("Authentication", expanded=True):
+        st.markdown(f"**Logged in as:** `{st.session_state['username']}`")
+        if st.button("🚪 Logout", use_container_width=True):
+            st.session_state['user_id'] = None
+            st.session_state['username'] = None
+            st.rerun()
