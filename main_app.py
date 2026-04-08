@@ -194,47 +194,51 @@ def load_data(uid):
 
 expenses_list, analyzer = load_data(user_id)
 
-# --- SIDEBAR: INPUT FORM ---
-with st.sidebar:
-    st.title(f"🎓 {st.session_state['username']}'s Wallet")
-    
-    with st.form("expense_form", clear_on_submit=True):
-        amount = st.number_input("Amount ($)", min_value=0.01, format="%f")
-        date_input = st.date_input("Date", value=datetime.date.today())
-        description = st.text_input("Description", placeholder="e.g. Coffee at Campus")
-        category = st.selectbox("Category", [
-            "Food & Dining", "Transport", "Academics", 
-            "Entertainment", "Rent", "Utilities", "Other"
-        ])
-        
-        submitted = st.form_submit_button("Add Expense", use_container_width=True)
-        if submitted:
-            new_expense = Expense(
-                user_id=user_id,
-                amount=amount,
-                date=date_input.strftime("%Y-%m-%d"),
-                description=description,
-                category=category
-            )
-            db.add_expense(new_expense)
-            st.success(f"Added {category} expense of ${amount:.2f}")
+# --- EXPENSE & SETTINGS CONTROLS ---
+col_form, col_settings = st.columns([2, 1])
+
+with col_form:
+    with st.expander("➕ Record New Expense", expanded=True):
+        with st.form("expense_form", clear_on_submit=True):
+            amount = st.number_input("Amount ($)", min_value=0.01, format="%f")
+            date_input = st.date_input("Date", value=datetime.date.today())
+            description = st.text_input("Description", placeholder="e.g. Coffee at Campus")
+            category = st.selectbox("Category", [
+                "Food & Dining", "Transport", "Academics", 
+                "Entertainment", "Rent", "Utilities", "Other"
+            ])
+            
+            submitted = st.form_submit_button("Add Expense", use_container_width=True)
+            if submitted:
+                new_expense = Expense(
+                    user_id=user_id,
+                    amount=amount,
+                    date=date_input.strftime("%Y-%m-%d"),
+                    description=description,
+                    category=category
+                )
+                db.add_expense(new_expense)
+                st.success(f"Added {category} expense of ${amount:.2f}")
+                st.rerun()
+
+with col_settings:
+    with st.expander("⚙️ Budget Settings & Account", expanded=True):
+        if 'monthly_budget' not in st.session_state:
+            st.session_state['monthly_budget'] = 1000.0
+            
+        budget_input = st.number_input("Monthly Budget ($)", value=st.session_state['monthly_budget'], step=50.0)
+        if budget_input != st.session_state['monthly_budget']:
+            st.session_state['monthly_budget'] = budget_input
             st.rerun()
             
-    st.divider()
-    st.subheader("💰 Budget Settings")
-    if 'monthly_budget' not in st.session_state:
-        st.session_state['monthly_budget'] = 1000.0
-        
-    budget_input = st.number_input("Monthly Budget ($)", value=st.session_state['monthly_budget'], step=50.0)
-    if budget_input != st.session_state['monthly_budget']:
-        st.session_state['monthly_budget'] = budget_input
-        st.rerun()
-        
-    st.divider()
-    if st.button("🚪 Logout", use_container_width=True):
-        st.session_state['user_id'] = None
-        st.session_state['username'] = None
-        st.rerun()
+        st.divider()
+        st.markdown(f"**Logged in as:** `{st.session_state['username']}`")
+        if st.button("🚪 Logout", use_container_width=True):
+            st.session_state['user_id'] = None
+            st.session_state['username'] = None
+            st.rerun()
+
+st.markdown("<br><hr>", unsafe_allow_html=True)
 
 # --- MAIN DASHBOARD ---
 st.title("Smart Student Expense Tracker")
