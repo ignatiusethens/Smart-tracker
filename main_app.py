@@ -239,11 +239,14 @@ with col_form:
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("### 📱 M-Pesa Auto-Fill")
     st.markdown("Paste your Safaricom message here to auto-fill the manual form above.")
-    col_sms, col_btn = st.columns([3, 1])
-    with col_sms:
-        sms_text = st.text_input("Paste SMS", placeholder="e.g. Ksh150.00 paid to VENDOR X on 10/10...", label_visibility="collapsed")
-    with col_btn:
-        if st.button("Parse SMS", use_container_width=True):
+    with st.form("mpesa_form", clear_on_submit=True):
+        col_sms, col_btn = st.columns([3, 1])
+        with col_sms:
+            sms_text = st.text_input("Paste SMS", placeholder="e.g. Ksh150.00 paid to VENDOR X on 10/10...", label_visibility="collapsed")
+        with col_btn:
+            submitted = st.form_submit_button("Parse SMS", use_container_width=True)
+            
+        if submitted:
             amount_match = re.search(r'Ksh\s*([\d,]+\.?\d*)', sms_text, re.IGNORECASE)
             vendor_match = re.search(r'(?:paid to|sent to)\s*(.*?)\s*on', sms_text, re.IGNORECASE)
             if amount_match:
