@@ -2,6 +2,7 @@ import streamlit as st
 import datetime
 import plotly.express as px
 import pandas as pd
+import re
 from models import Expense, BudgetAnalyzer
 from database import DatabaseManager
 
@@ -169,8 +170,14 @@ if st.session_state['user_id'] is None:
                 if st.form_submit_button("Register", use_container_width=True):
                     if r_password != r_confirm:
                         st.error("Passwords do not match!")
-                    elif len(r_password) < 4:
-                        st.error("Password must be at least 4 characters long.")
+                    elif len(r_password) < 8:
+                        st.error("Security Risk: Password must be at least 8 characters long!")
+                    elif not re.search(r"[A-Z]", r_password):
+                        st.error("Security Risk: Password must contain at least one uppercase letter!")
+                    elif not re.search(r"[a-z]", r_password):
+                        st.error("Security Risk: Password must contain at least one lowercase letter!")
+                    elif not re.search(r"[0-9]", r_password):
+                        st.error("Security Risk: Password must contain at least one numeric digit!")
                     elif not r_username:
                         st.error("Username cannot be empty")
                     else:
