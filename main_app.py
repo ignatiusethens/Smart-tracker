@@ -205,21 +205,22 @@ expenses_list, analyzer = load_data(user_id)
 col_form, col_settings = st.columns([2, 1])
 
 with col_form:
+    st.markdown("### 📱 M-Pesa Auto-Fill")
+    st.markdown("Paste your Safaricom message here to auto-fill the manual form below.")
+    col_sms, col_btn = st.columns([3, 1])
+    with col_sms:
+        sms_text = st.text_input("Paste SMS", placeholder="e.g. Ksh150.00 paid to VENDOR X on 10/10...", label_visibility="collapsed")
+    with col_btn:
+        if st.button("Parse SMS", use_container_width=True):
+            amount_match = re.search(r'Ksh\s*([\d,]+\.?\d*)', sms_text, re.IGNORECASE)
+            vendor_match = re.search(r'(?:paid to|sent to)\s*(.*?)\s*on', sms_text, re.IGNORECASE)
+            if amount_match:
+                st.session_state['parsed_amount'] = float(amount_match.group(1).replace(',', ''))
+            if vendor_match:
+                st.session_state['parsed_vendor'] = vendor_match.group(1).strip()
+            st.rerun()
+            
     with st.expander("➕ Record New Expense", expanded=True):
-        st.markdown("##### 📱 Auto-fill with M-Pesa SMS")
-        col_sms, col_btn = st.columns([3, 1])
-        with col_sms:
-            sms_text = st.text_input("Paste SMS", placeholder="Ksh150 paid to VENDOR...", label_visibility="collapsed")
-        with col_btn:
-            if st.button("Parse"):
-                amount_match = re.search(r'Ksh\s*([\d,]+\.?\d*)', sms_text, re.IGNORECASE)
-                vendor_match = re.search(r'(?:paid to|sent to)\s*(.*?)\s*on', sms_text, re.IGNORECASE)
-                if amount_match:
-                    st.session_state['parsed_amount'] = float(amount_match.group(1).replace(',', ''))
-                if vendor_match:
-                    st.session_state['parsed_vendor'] = vendor_match.group(1).strip()
-                st.rerun()
-                
         with st.form("expense_form", clear_on_submit=True):
             amt_val = st.session_state.get('parsed_amount', 1.0)
             desc_val = st.session_state.get('parsed_vendor', "")
