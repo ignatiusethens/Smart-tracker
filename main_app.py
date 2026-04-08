@@ -206,10 +206,27 @@ col_form, col_settings = st.columns([2, 1])
 
 with col_form:
     with st.expander("➕ Record New Expense", expanded=True):
+        st.markdown("##### 📱 Auto-fill with M-Pesa SMS")
+        col_sms, col_btn = st.columns([3, 1])
+        with col_sms:
+            sms_text = st.text_input("Paste SMS", placeholder="Ksh150 paid to VENDOR...", label_visibility="collapsed")
+        with col_btn:
+            if st.button("Parse"):
+                amount_match = re.search(r'Ksh\s*([\d,]+\.?\d*)', sms_text, re.IGNORECASE)
+                vendor_match = re.search(r'(?:paid to|sent to)\s*(.*?)\s*on', sms_text, re.IGNORECASE)
+                if amount_match:
+                    st.session_state['parsed_amount'] = float(amount_match.group(1).replace(',', ''))
+                if vendor_match:
+                    st.session_state['parsed_vendor'] = vendor_match.group(1).strip()
+                st.rerun()
+                
         with st.form("expense_form", clear_on_submit=True):
-            amount = st.number_input("Amount (Ksh)", min_value=1.0, format="%f")
+            amt_val = st.session_state.get('parsed_amount', 1.0)
+            desc_val = st.session_state.get('parsed_vendor', "")
+            
+            amount = st.number_input("Amount (Ksh)", min_value=1.0, value=amt_val, format="%f")
             date_input = st.date_input("Date", value=datetime.date.today())
-            description = st.text_input("Description", placeholder="e.g. Coffee at Campus")
+            description = st.text_input("Description", value=desc_val, placeholder="e.g. Coffee at Campus")
             category = st.selectbox("Category", [
                 "Food & Dining", "Transport", "Academics", 
                 "Entertainment", "Rent", "Utilities", 
@@ -225,6 +242,10 @@ with col_form:
                     description=description,
                     category=category
                 )
+                if 'parsed_amount' in st.session_state:
+                    del st.session_state['parsed_amount']
+                if 'parsed_vendor' in st.session_state:
+                    del st.session_state['parsed_vendor']
                 db.add_expense(new_expense)
                 st.success(f"Added {category} expense of Ksh {amount:,.2f}")
                 st.rerun()
@@ -252,105 +273,147 @@ st.markdown("<br><hr>", unsafe_allow_html=True)
 st.title("Smart Student Expense Tracker")
 st.markdown("Monitor your personal finances and prevent overspending. 🚀")
 
-monthly_budget = st.session_state['monthly_budget']
-total_spent = analyzer.get_total_expenses()
-budget_used_pct = analyzer.get_budget_status_percentage(monthly_budget)
+dash_tab, funds_tab = st.tabs(["📊 Dashboard View", "💰 Sinking Funds & Goals"])
 
-projected_spend = analyzer.get_projected_spending()
+with dash_tab:
+    monthly_budget = st.session_state['monthly_budget']
+    total_spent = analyzer.get_total_expenses()
+    budget_used_pct = analyzer.get_budget_status_percentage(monthly_budget)
+    projected_spend = analyzer.get_projected_spending()
+    safe_daily = analyzer.get_safe_daily_limit(monthly_budget)
 
-# Budget Alerts
-if budget_used_pct >= 100:
-    st.error(f"🚨 **Over Budget!** You have spent Ksh {total_spent:,.2f}, exceeding your budget of Ksh {monthly_budget:,.2f}.")
-elif budget_used_pct >= 80:
-    st.warning(f"⚠️ **Warning!** You have spent {budget_used_pct:.1f}% of your budget. Slow down on spending!")
-elif projected_spend > monthly_budget:
-    st.warning(f"🔥 **Burn Rate Alert:** At your current daily pace, you are projected to spend Ksh {projected_spend:,.2f} this month, crossing your limit!")
-elif total_spent > 0:
-    st.success(f"✅ **On Track!** You've spent {budget_used_pct:.1f}% of your budget, and your burn rate is healthy.")
+    # Budget Alerts
+    if budget_used_pct >= 100:
+        st.error(f"🚨 **Over Budget!** You have spent Ksh {total_spent:,.2f}, exceeding your budget of Ksh {monthly_budget:,.2f}.")
+    elif budget_used_pct >= 80:
+        st.warning(f"⚠️ **Warning!** You have spent {budget_used_pct:.1f}% of your budget. Slow down on spending!")
+    elif projected_spend > monthly_budget:
+        st.warning(f"🔥 **Burn Rate Alert:** At your current daily pace, you are projected to spend Ksh {projected_spend:,.2f} this month, crossing your limit!")
+    elif total_spent > 0:
+        st.success(f"✅ **On Track!** You've spent {budget_used_pct:.1f}% of your budget, and your burn rate is healthy.")
 
-# KPIs / Metrics
-st.markdown("<br>", unsafe_allow_html=True)
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    st.metric(label="Total Expenses", value=f"Ksh {total_spent:,.0f}")
-with col2:
-    remaining = max(0, monthly_budget - total_spent)
-    st.metric(label="Remaining Budget", value=f"Ksh {remaining:,.0f}")
-with col3:
-    st.metric(label="Burn Rate (Projected)", value=f"Ksh {projected_spend:,.0f}")
-with col4:
-    st.metric(label="Budget Utilization", value=f"{budget_used_pct:.1f}%")
+    # KPIs / Metrics
+    st.markdown("<br>", unsafe_allow_html=True)
+    col1, col2, col3, collimit, col4 = st.columns(5)
+    with col1:
+        st.metric(label="Total Expenses", value=f"Ksh {total_spent:,.0f}")
+    with col2:
+        remaining = max(0, monthly_budget - total_spent)
+        st.metric(label="Remaining Budget", value=f"Ksh {remaining:,.0f}")
+    with col3:
+        st.metric(label="Burn Rate (Projected)", value=f"Ksh {projected_spend:,.0f}")
+    with collimit:
+        st.metric(label="Safe-to-Spend (Daily)", value=f"Ksh {safe_daily:,.0f}")
+    with col4:
+        st.metric(label="Budget Utilization", value=f"{budget_used_pct:.1f}%")
 
-st.markdown("<br><hr>", unsafe_allow_html=True)
+    st.markdown("<br><hr>", unsafe_allow_html=True)
 
-# Charts Section
-col_chart1, col_chart2 = st.columns(2)
+    # Charts Section
+    col_chart1, col_chart2 = st.columns(2)
 
-with col_chart1:
-    st.subheader("Spending by Category")
-    df_cat = analyzer.get_expenses_by_category()
-    if not df_cat.empty:
-        fig_pie = px.pie(
-            df_cat, 
-            names='category', 
-            values='amount', 
-            hole=0.4,
-            color_discrete_sequence=px.colors.qualitative.Pastel
+    with col_chart1:
+        st.subheader("Spending by Category")
+        df_cat = analyzer.get_expenses_by_category()
+        if not df_cat.empty:
+            fig_pie = px.pie(
+                df_cat, 
+                names='category', 
+                values='amount', 
+                hole=0.4,
+                color_discrete_sequence=px.colors.qualitative.Pastel
+            )
+            fig_pie.update_layout(
+                margin=dict(t=0, b=0, l=0, r=0),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font_color="#e2e8f0"
+            )
+            st.plotly_chart(fig_pie, use_container_width=True)
+        else:
+            st.info("No expenses recorded yet. Add some to see the chart.")
+
+    with col_chart2:
+        st.subheader("Spending Over Time")
+        df_time = analyzer.get_expenses_over_time()
+        if not df_time.empty:
+            fig_bar = px.bar(
+                df_time, 
+                x='date', 
+                y='amount', 
+                text_auto='.2s',
+                color_discrete_sequence=['#38bdf8']
+            )
+            fig_bar.update_layout(
+                margin=dict(t=0, b=0, l=0, r=0),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font_color="#e2e8f0",
+                xaxis_title="Date",
+                yaxis_title="Amount (Ksh)"
+            )
+            st.plotly_chart(fig_bar, use_container_width=True)
+        else:
+            st.info("No expenses recorded yet. Add some to see the chart.")
+
+    st.markdown("<br><hr>", unsafe_allow_html=True)
+
+    # Data Table Section
+    st.subheader("Recent Expenses Data")
+    if expenses_list:
+        df_display = pd.DataFrame([vars(e) for e in expenses_list])
+        # Drop internal data structure columns
+        df_display = df_display.drop(columns=['id', 'user_id'])
+        # Reorder columns
+        df_display = df_display[['date', 'category', 'description', 'amount']]
+        
+        st.dataframe(
+            df_display, 
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "date": st.column_config.DateColumn("Date"),
+                "category": st.column_config.TextColumn("Category"),
+                "description": st.column_config.TextColumn("Description"),
+                "amount": st.column_config.NumberColumn("Amount (Ksh)", format="Ksh %.2f")
+            }
         )
-        fig_pie.update_layout(
-            margin=dict(t=0, b=0, l=0, r=0),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#e2e8f0"
-        )
-        st.plotly_chart(fig_pie, use_container_width=True)
     else:
-        st.info("No expenses recorded yet. Add some to see the chart.")
+        st.info("Your expense log is empty.")
 
-with col_chart2:
-    st.subheader("Spending Over Time")
-    df_time = analyzer.get_expenses_over_time()
-    if not df_time.empty:
-        fig_bar = px.bar(
-            df_time, 
-            x='date', 
-            y='amount', 
-            text_auto='.2s',
-            color_discrete_sequence=['#38bdf8']
-        )
-        fig_bar.update_layout(
-            margin=dict(t=0, b=0, l=0, r=0),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#e2e8f0",
-            xaxis_title="Date",
-            yaxis_title="Amount (Ksh)"
-        )
-        st.plotly_chart(fig_bar, use_container_width=True)
-    else:
-        st.info("No expenses recorded yet. Add some to see the chart.")
-
-st.markdown("<br><hr>", unsafe_allow_html=True)
-
-# Data Table Section
-st.subheader("Recent Expenses Data")
-if expenses_list:
-    df_display = pd.DataFrame([vars(e) for e in expenses_list])
-    # Drop internal data structure columns
-    df_display = df_display.drop(columns=['id', 'user_id'])
-    # Reorder columns
-    df_display = df_display[['date', 'category', 'description', 'amount']]
+with funds_tab:
+    st.header("Sinking Funds & Goal Tracking")
+    st.markdown("Set aside small amounts over time for large targets like Tuition or Camera Gear.")
     
-    st.dataframe(
-        df_display, 
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "date": st.column_config.DateColumn("Date"),
-            "category": st.column_config.TextColumn("Category"),
-            "description": st.column_config.TextColumn("Description"),
-            "amount": st.column_config.NumberColumn("Amount (Ksh)", format="Ksh %.2f")
-        }
-    )
-else:
-    st.info("Your expense log is empty.")
+    with st.expander("➕ Create New Goal", expanded=False):
+        with st.form("new_goal_form", clear_on_submit=True):
+            g_name = st.text_input("Goal Name", placeholder="e.g. Tuition, Camera Lens")
+            g_target = st.number_input("Target Amount (Ksh)", min_value=1.0, step=500.0)
+            if st.form_submit_button("Create Goal", use_container_width=True):
+                from models import Goal
+                db.add_goal(Goal(name=g_name, target_amount=g_target, current_amount=0.0, user_id=user_id))
+                st.success("Goal created successfully!")
+                st.rerun()
+                
+    st.markdown("<hr>", unsafe_allow_html=True)
+    goals = db.get_all_goals(user_id)
+    
+    if not goals:
+        st.info("No sinking funds yet! Start saving for your next target.")
+    else:
+        for g in goals:
+            pct = min(1.0, g.current_amount / g.target_amount)
+            st.markdown(f"#### {g.name}")
+            st.markdown(f"**Ksh {g.current_amount:,.0f}** saved out of **Ksh {g.target_amount:,.0f}** ({pct*100:.1f}%)")
+            st.progress(pct)
+            
+            with st.form(f"fund_{g.id}", clear_on_submit=True):
+                col_amt, col_sub = st.columns([2, 1])
+                with col_amt:
+                    add_amt = st.number_input("Add Funds (Ksh)", min_value=1.0, step=100.0, key=f"amt_{g.id}", label_visibility="collapsed")
+                with col_sub:
+                    if st.form_submit_button("Contribute", use_container_width=True):
+                        db.add_funds_to_goal(g.id, user_id, add_amt)
+                        st.success(f"Added Ksh {add_amt} to {g.name}!")
+                        st.rerun()
+            st.markdown("<br>", unsafe_allow_html=True)

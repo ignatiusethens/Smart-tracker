@@ -3,7 +3,7 @@ import bcrypt
 from typing import List, Optional
 from sqlalchemy import create_engine, Column, Integer, Float, String, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker
-from models import Expense
+from models import Expense, Goal
 
 Base = declarative_base()
 
@@ -21,6 +21,14 @@ class DBExpense(Base):
     date = Column(String, nullable=False)
     description = Column(String)
     category = Column(String, nullable=False)
+
+class DBGoal(Base):
+    __tablename__ = 'goals'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    goal_name = Column(String, nullable=False)
+    target_amount = Column(Float, nullable=False)
+    current_amount = Column(Float, default=0.0)
 
 class DatabaseManager:
     """
@@ -104,3 +112,40 @@ class DatabaseManager:
         with self.Session() as session:
             session.query(DBExpense).filter_by(id=expense_id, user_id=user_id).delete()
             session.commit()
+
+    def add_goal(self, goal: Goal) -> None:
+        """Inserts a new goal record belonging to a specific user"""
+        with self.Session() as session:
+            db_goal = DBGoal(
+                user_id=goal.user_id,
+                goal_name=goal.name,
+                target_amount=goal.target_amount,
+                current_amount=goal.current_amount
+            )
+            session.add(db_goal)
+            session.commit()
+
+    def get_all_goals(self, user_id: int) -> List[Goal]:
+        """Retrieves all goals ensuring isolation to the requesting user_id."""
+        with self.Session() as session:
+            rows = session.query(DBGoal).filter_by(user_id=user_id).all()
+            goals = []
+            for row in rows:
+                goals.append(
+                    Goal(
+                        id=row.id,
+                        user_id=row.user_id,
+                        name=row.goal_name,
+                        target_amount=row.target_amount,
+                        current_amount=row.current_amount
+                    )
+                )
+            return goals
+
+    def add_funds_to_goal(self, goal_id: int, user_id: int, amount: float) -> None:
+        """Adds funds to an existing goal safely."""
+        with self.Session() as session:
+            goal = session.query(DBGoal).filter_by(id=goal_id, user_id=user_id).first()
+            if goal:
+                goal.current_amount += amount
+                session.commit()

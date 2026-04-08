@@ -16,6 +16,17 @@ class Expense:
     user_id: int
     id: Optional[int] = None
 
+@dataclass
+class Goal:
+    """
+    Represents a sinking fund target goal.
+    """
+    name: str
+    target_amount: float
+    current_amount: float
+    user_id: int
+    id: Optional[int] = None
+
 class BudgetAnalyzer:
     """
     Responsible for analyzing collections of Expense objects.
@@ -88,3 +99,14 @@ class BudgetAnalyzer:
         daily_avg = self.get_daily_average_this_month()
         days_in_month = calendar.monthrange(today.year, today.month)[1]
         return daily_avg * days_in_month
+
+    def get_safe_daily_limit(self, monthly_budget: float) -> float:
+        """Calculates safe daily spending amount based on remaining budget and days."""
+        today = date.today()
+        total_spent = self.get_total_expenses()
+        remaining_budget = max(0, monthly_budget - total_spent)
+        
+        days_in_month = calendar.monthrange(today.year, today.month)[1]
+        days_left = max(1, days_in_month - today.day + 1)
+        
+        return remaining_budget / days_left
