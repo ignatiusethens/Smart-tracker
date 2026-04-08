@@ -126,6 +126,32 @@ custom_css = """
             font-size: 1.8rem !important;
         }
     }
+
+    /* Mount Animations (Fill Up / Slide Up) */
+    @keyframes fillUpFade {
+        0% { opacity: 0; transform: translateY(60px) scale(0.95); }
+        100% { opacity: 1; transform: translateY(0) scale(1.0); }
+    }
+    @keyframes barGrow {
+        0% { transform: scaleY(0); transform-origin: bottom; opacity: 0; }
+        100% { transform: scaleY(1); transform-origin: bottom; opacity: 1; }
+    }
+
+    /* Target the container wrapping charts to fade up */
+    div[data-testid="stPlotlyChart"] {
+        animation: fillUpFade 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    
+    /* Target the metrics to slide in sequentially */
+    div[data-testid="metric-container"] {
+        animation: fillUpFade 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    
+    /* Target the dataframes */
+    div[data-testid="stDataFrame"] {
+        animation: fillUpFade 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
