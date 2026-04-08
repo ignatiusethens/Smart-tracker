@@ -160,11 +160,13 @@ st.markdown(custom_css, unsafe_allow_html=True)
 # Safe caching is hard with db engine, so we'll init each run. SQLAlchemy handles pooling.
 db = DatabaseManager()
 
-# --- AUTH LOGIC ---
+# --- SESSION STATE INITIALIZATION & AUTH LOGIC ---
 if 'user_id' not in st.session_state:
     st.session_state['user_id'] = None
 if 'username' not in st.session_state:
     st.session_state['username'] = None
+if 'monthly_budget' not in st.session_state:
+    st.session_state['monthly_budget'] = 15000.0
 
 if st.session_state['user_id'] is None:
     # --- LOGIN & REGISTER PAGE ---
@@ -428,9 +430,6 @@ with settings_tab:
     st.markdown("Manage your baseline tracking settings and active session.")
     
     with st.expander("Monthly Budget Control", expanded=True):
-        if 'monthly_budget' not in st.session_state:
-            st.session_state['monthly_budget'] = 15000.0
-            
         budget_input = st.number_input("Monthly Budget (Ksh)", value=st.session_state['monthly_budget'], step=1000.0)
         if budget_input != st.session_state['monthly_budget']:
             st.session_state['monthly_budget'] = budget_input
