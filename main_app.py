@@ -22,7 +22,7 @@ class ThemeManager:
 
             :root {
                 --apple-bg: #F2F2F7;
-                --apple-card: #FFFFFF;
+                --apple-card: rgba(255, 255, 255, 0.65);
                 --apple-text: #1C1C1E;
                 --apple-text-muted: #8E8E93;
                 --apple-placeholder: #86868B;
@@ -149,11 +149,13 @@ class ThemeManager:
             
             .metric-card {
                 background-color: var(--apple-card);
-                border: 1px solid rgba(0,0,0,0.03);
+                border: 1px solid rgba(255,255,255,0.4);
                 border-radius: 16px;
                 padding: 24px;
                 text-align: center;
                 box-shadow: 0 4px 20px rgba(0,0,0,0.05); /* Refined Apple Light Mode floating shadow */
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
             }
             .metric-title {
                 color: var(--apple-text-muted);
@@ -182,7 +184,9 @@ class ThemeManager:
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                border: 1px dashed var(--apple-border);
+                border: 1px dashed var(--apple-placeholder);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
             }
 
         </style>
