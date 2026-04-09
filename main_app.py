@@ -83,21 +83,31 @@ custom_css = """
     div[data-testid="stMetricValue"] {
         color: #38bdf8;
         font-weight: 800;
-        font-size: 2.8rem;
+        flex-wrap: nowrap;
+        white-space: nowrap !important;
+        font-size: clamp(1.4rem, 2.5vw, 2.8rem) !important;
     }
     div[data-testid="stMetricLabel"] {
         color: #94a3b8;
-        font-size: 1.1rem;
         font-weight: 600;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        word-break: normal !important;
+        font-size: clamp(0.75rem, 1.25vw, 1.1rem) !important;
     }
     .css-1r6slb0, .css-1y4p8pa, div[data-testid="metric-container"] {
         background: rgba(255, 255, 255, 0.02);
         backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.05);
         border-radius: 16px;
-        padding: 24px;
+        padding: 20px 15px;
         box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
         transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
     }
     .css-1r6slb0:hover, .css-1y4p8pa:hover, div[data-testid="metric-container"]:hover {
         transform: translateY(-5px);
@@ -118,12 +128,8 @@ custom_css = """
             padding-left: 1rem !important;
             padding-right: 1rem !important;
         }
-        /* Make fonts slightly smaller on mobile */
-        div[data-testid="stMetricValue"] {
-            font-size: 2.2rem;
-        }
         h1 {
-            font-size: 1.8rem !important;
+            font-size: clamp(1.6rem, 5vw, 2.5rem) !important;
         }
     }
 
