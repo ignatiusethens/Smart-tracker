@@ -156,7 +156,7 @@ class ThemeManager:
 
 class UIComponents:
     @staticmethod
-    def render_hero():
+    def render_hero(show_cta=True):
         st.markdown('''
             <div style="padding: 4rem 0 2rem 0;">
                 <div class="hero-title" style="font-size: clamp(2rem, 5vw, 3rem);">SMART STUDENT EXPENSE TRACKER</div>
@@ -164,9 +164,10 @@ class UIComponents:
             </div>
         ''', unsafe_allow_html=True)
         # Visual Anchor
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col2:
-            st.markdown('<div class="stButton primary-btn"><button><a href="#input-center" style="color:#FFFFFF; text-decoration:none;">Start Tracking</a></button></div>', unsafe_allow_html=True)
+        if show_cta:
+            col1, col2, col3 = st.columns([1, 1, 1])
+            with col2:
+                st.markdown('<div class="stButton primary-btn"><button><a href="#input-center" style="color:#FFFFFF; text-decoration:none;">Start Tracking</a></button></div>', unsafe_allow_html=True)
         st.markdown("<br><br>", unsafe_allow_html=True)
 
     @staticmethod
@@ -200,7 +201,7 @@ class ExpenseTrackerApp:
             self.render_main_app()
 
     def render_auth(self):
-        UIComponents.render_hero()
+        UIComponents.render_hero(show_cta=False)
         st.markdown("<div style='text-align:center; color:#AEAEB2; margin-bottom: 2rem;'>Secure Access Portal</div>", unsafe_allow_html=True)
         
         col1, col2, col3 = st.columns([1, 1.5, 1])
@@ -246,7 +247,7 @@ class ExpenseTrackerApp:
         analyzer = BudgetAnalyzer(expenses)
         
         # Hero
-        UIComponents.render_hero()
+        UIComponents.render_hero(show_cta=True)
 
         st.markdown("<div id='input-center'></div>", unsafe_allow_html=True)
         
