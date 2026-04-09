@@ -160,7 +160,7 @@ class UIComponents:
         st.markdown('''
             <div style="padding: 4rem 0 2rem 0;">
                 <div class="hero-title" style="font-size: clamp(2rem, 5vw, 3rem);">SMART STUDENT EXPENSE TRACKER</div>
-                <div class="hero-subtitle" style="margin-top: 1rem; max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.5;">Stop wondering where your money went. Transform your financial anxiety into complete confidence. We built a frictionless system that does the heavy lifting for you—so you can spend guilt-free, effortlessly build better habits, and finally feel in total control of your money.</div>
+                <div class="hero-subtitle" style="margin-top: 1rem; max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.5;">Stop wondering where your money went. Transform financial anxiety into complete confidence with a frictionless system designed to do the heavy lifting for you. Spend guilt-free, effortlessly build better habits, and finally feel in total control of your finances.</div>
             </div>
         ''', unsafe_allow_html=True)
         # Visual Anchor
