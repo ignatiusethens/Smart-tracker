@@ -1,449 +1,396 @@
 import streamlit as st
 import datetime
 import plotly.express as px
+import plotly.graph_objects as go
 import pandas as pd
 import re
-from models import Expense, BudgetAnalyzer
+from models import Expense, BudgetAnalyzer, Goal
 from database import DatabaseManager
 
-# --- PAGE CONFIGURATION ---
-st.set_page_config(
-    page_title="Smart Student Expense Tracker",
-    page_icon="🎓",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+class ThemeManager:
+    @staticmethod
+    def apply_theme():
+        st.set_page_config(
+            page_title="Expense Tracker | Pro",
+            page_icon="",
+            layout="wide",
+            initial_sidebar_state="collapsed"
+        )
+        custom_css = """
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;800&display=swap');
 
-# --- CUSTOM CSS FOR PREMIUM LOOK ---
-custom_css = """
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
+            :root {
+                --apple-bg: #FFFFFF;
+                --apple-card: #F2F2F7;
+                --apple-text: #000000;
+                --apple-text-muted: #8E8E93;
+                --sf-blue: #007AFF;
+                --sf-mint: #00C7BE;
+                --sf-red: #FF3B30;
+                --sf-yellow: #FFCC00;
+            }
 
-    /* Global Font & Background */
-    html, body, [class*="css"] {
-        font-family: 'Outfit', sans-serif;
-    }
-    .stApp {
-        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-        color: #f8fafc;
-    }
+            html, body, [class*="css"] {
+                font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif !important;
+            }
+            .stApp {
+                background-color: var(--apple-bg);
+                color: var(--apple-text);
+            }
+            
+            #MainMenu {visibility: hidden;}
+            header {visibility: hidden;}
+            footer {visibility: hidden;}
 
-    /* Hide Streamlit Native Branding */
-    #MainMenu {visibility: hidden;}
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
+            .hero-title {
+                text-align: center;
+                font-size: clamp(2.5rem, 6vw, 4rem);
+                font-weight: 800;
+                background: linear-gradient(180deg, #000000 0%, #8E8E93 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-bottom: 0.5rem;
+                letter-spacing: -1px;
+            }
+            .hero-subtitle {
+                text-align: center;
+                color: var(--apple-text-muted);
+                font-size: 1.2rem;
+                font-weight: 400;
+                margin-bottom: 3rem;
+            }
 
-    /* Sidebar Glassmorphism */
-    [data-testid="stSidebar"] {
-        background-color: rgba(15, 23, 42, 0.5) !important;
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border-right: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    
-    /* Input Fields (Widgets) Styling for Premium Look */
-    div[data-baseweb="input"] > div, 
-    div[data-baseweb="select"] > div, 
-    div[data-baseweb="number-input"] > div {
-        background-color: rgba(255, 255, 255, 0.05) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 10px !important;
-        transition: all 0.3s ease;
-        color: white;
-    }
-    div[data-baseweb="input"] > div:focus-within, 
-    div[data-baseweb="select"] > div:focus-within {
-        border-color: #38bdf8 !important;
-        box-shadow: 0 0 10px rgba(56, 189, 248, 0.3) !important;
-    }
+            div[data-baseweb="input"] > div, 
+            div[data-baseweb="select"] > div, 
+            div[data-baseweb="number-input"] > div,
+            textarea {
+                background-color: rgba(0, 0, 0, 0.03) !important;
+                border: 1px solid rgba(0, 0, 0, 0.1) !important;
+                border-radius: 12px !important;
+                color: var(--apple-text) !important;
+            }
+            div[data-baseweb="input"] > div:focus-within, 
+            div[data-baseweb="select"] > div:focus-within {
+                border-color: var(--sf-blue) !important;
+                box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.2) !important;
+            }
 
-    /* Button Styling */
-    div.stButton > button:first-child {
-        background: linear-gradient(90deg, #38bdf8 0%, #3b82f6 100%);
-        color: white;
-        border: none;
-        border-radius: 12px;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        padding: 10px 24px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
-        width: 100%;
-    }
-    div.stButton > button:first-child:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
-        color: white;
-    }
-    div.stButton > button:first-child:active {
-        transform: translateY(0);
-    }
+            div.stButton > button:first-child {
+                background: rgba(0, 0, 0, 0.05);
+                color: var(--apple-text);
+                border: 1px solid rgba(0, 0, 0, 0.05);
+                border-radius: 14px;
+                font-weight: 500;
+                transition: all 0.3s ease;
+                backdrop-filter: blur(10px);
+            }
+            div.stButton.primary-btn > button:first-child {
+                background: var(--sf-blue);
+                color: #FFFFFF;
+                border: none;
+                box-shadow: 0 4px 15px rgba(0, 122, 255, 0.3);
+                font-weight: 600;
+            }
+            div.stButton > button:first-child:hover {
+                background: rgba(0, 0, 0, 0.1);
+                transform: translateY(-1px);
+            }
+            div.stButton.primary-btn > button:first-child:hover {
+                background: #0A84FF;
+                color: #FFFFFF;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(0, 122, 255, 0.4);
+            }
 
-    /* Metric Cards Glassmorphism */
-    div[data-testid="stMetricValue"] {
-        color: #38bdf8;
-        font-weight: 800;
-        flex-wrap: nowrap;
-        white-space: nowrap !important;
-        font-size: clamp(1.4rem, 2.5vw, 2.8rem) !important;
-    }
-    div[data-testid="stMetricLabel"] {
-        color: #94a3b8;
-        font-weight: 600;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        word-break: normal !important;
-        font-size: clamp(0.75rem, 1.25vw, 1.1rem) !important;
-    }
-    .css-1r6slb0, .css-1y4p8pa, div[data-testid="metric-container"] {
-        background: rgba(255, 255, 255, 0.02);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 16px;
-        padding: 20px 15px;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: flex-start;
-    }
-    .css-1r6slb0:hover, .css-1y4p8pa:hover, div[data-testid="metric-container"]:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
+            .stProgress > div > div > div > div {
+                background-color: var(--sf-yellow) !important;
+                box-shadow: 0 0 12px rgba(255, 214, 10, 0.5);
+                border-radius: 10px;
+            }
+            
+            button[data-baseweb="tab"] {
+                border-radius: 8px !important;
+                padding: 10px 20px !important;
+            }
+            
+            .metric-card {
+                background-color: var(--apple-card);
+                border: 1px solid rgba(0,0,0,0.05);
+                border-radius: 20px;
+                padding: 24px;
+                text-align: center;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+            }
+            .metric-title {
+                color: var(--apple-text-muted);
+                font-size: 0.9rem;
+                font-weight: 500;
+                margin-bottom: 8px;
+            }
+            .metric-value {
+                color: var(--apple-text);
+                font-size: 2rem;
+                font-weight: 700;
+            }
+            .metric-safe { background: linear-gradient(80deg, #FFFFFF, #E8F8F5); border-color: rgba(0,199,190,0.3); }
+            .metric-safe .metric-value { color: var(--sf-mint); }
+            
+            .metric-warn { background: linear-gradient(80deg, #FFFFFF, #FDEDEC); border-color: rgba(255,59,48,0.3); }
+            .metric-warn .metric-value { color: var(--sf-red); }
 
-    /* Mobile Responsiveness & Container Spacing */
-    .block-container {
-        padding-top: 2rem !important;
-        padding-bottom: 2rem !important;
-        max-width: 1200px;
-    }
-    
-    @media (max-width: 768px) {
-        .block-container {
-            padding-top: 1rem !important;
-            padding-left: 1rem !important;
-            padding-right: 1rem !important;
-        }
-        h1 {
-            font-size: clamp(1.6rem, 5vw, 2.5rem) !important;
-        }
-    }
+            .empty-chart {
+                background: linear-gradient(135deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.04) 100%);
+                border-radius: 20px;
+                height: 250px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                border: 1px dashed rgba(0,0,0,0.1);
+            }
 
-    /* Mount Animations (Fill Up / Slide Up) */
-    @keyframes fillUpFade {
-        0% { opacity: 0; transform: translateY(60px) scale(0.95); }
-        100% { opacity: 1; transform: translateY(0) scale(1.0); }
-    }
-    @keyframes barGrow {
-        0% { transform: scaleY(0); transform-origin: bottom; opacity: 0; }
-        100% { transform: scaleY(1); transform-origin: bottom; opacity: 1; }
-    }
+        </style>
+        """
+        st.markdown(custom_css, unsafe_allow_html=True)
 
-    /* Target the container wrapping charts to fade up */
-    div[data-testid="stPlotlyChart"] {
-        animation: fillUpFade 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-    
-    /* Target the metrics to slide in sequentially */
-    div[data-testid="metric-container"] {
-        animation: fillUpFade 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-    
-    /* Target the dataframes */
-    div[data-testid="stDataFrame"] {
-        animation: fillUpFade 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
+class UIComponents:
+    @staticmethod
+    def render_hero():
+        st.markdown('''
+            <div style="padding: 4rem 0 2rem 0;">
+                <div class="hero-title">Frictionless Finance.</div>
+                <div class="hero-title" style="color: #8E8E93; background: none; -webkit-text-fill-color: #8E8E93;">Smarter Student Life.</div>
+                <div class="hero-subtitle">Designed for macOS. Native to your wallet.</div>
+            </div>
+        ''', unsafe_allow_html=True)
+        # Visual Anchor
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            st.markdown('<div class="stButton primary-btn"><button><a href="#input-center" style="color:#FFFFFF; text-decoration:none;">Start Tracking</a></button></div>', unsafe_allow_html=True)
+        st.markdown("<br><br>", unsafe_allow_html=True)
 
-</style>
-"""
-st.markdown(custom_css, unsafe_allow_html=True)
+    @staticmethod
+    def render_empty_state(text="No data available"):
+        st.markdown(f'''
+            <div class="empty-chart">
+                <div style="font-size: 2rem; color: #333;">✨</div>
+                <div style="color: #666; font-weight: 500; margin-top: 10px;">{text}</div>
+            </div>
+        ''', unsafe_allow_html=True)
 
-# --- INITIALIZATION ---
-# Safe caching is hard with db engine, so we'll init each run. SQLAlchemy handles pooling.
-db = DatabaseManager()
+class ExpenseTrackerApp:
+    def __init__(self):
+        self.db = DatabaseManager()
+        self.init_session_state()
 
-# --- SESSION STATE INITIALIZATION & AUTH LOGIC ---
-if 'user_id' not in st.session_state:
-    st.session_state['user_id'] = None
-if 'username' not in st.session_state:
-    st.session_state['username'] = None
-if 'monthly_budget' not in st.session_state:
-    st.session_state['monthly_budget'] = 15000.0
+    def init_session_state(self):
+        if 'user_id' not in st.session_state:
+            st.session_state['user_id'] = None
+        if 'username' not in st.session_state:
+            st.session_state['username'] = None
+        if 'monthly_budget' not in st.session_state:
+            st.session_state['monthly_budget'] = 15000.0
 
-if st.session_state['user_id'] is None:
-    # --- LOGIN & REGISTER PAGE ---
-    st.title("🎓 Smart Tracking Portal")
-    st.markdown("Please log in or register below to securely access your private dashboard.")
-    
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        tab1, tab2 = st.tabs(["Login", "Register"])
+    def run(self):
+        ThemeManager.apply_theme()
         
-        with tab1:
-            with st.form("login_form"):
-                l_username = st.text_input("Username")
-                l_password = st.text_input("Password", type="password")
-                if st.form_submit_button("Login", use_container_width=True):
-                    user_id = db.verify_user(l_username, l_password)
-                    if user_id:
-                        st.session_state['user_id'] = user_id
-                        st.session_state['username'] = l_username
+        if st.session_state['user_id'] is None:
+            self.render_auth()
+        else:
+            self.render_main_app()
+
+    def render_auth(self):
+        UIComponents.render_hero()
+        st.markdown("<div style='text-align:center; color:#AEAEB2; margin-bottom: 2rem;'>Secure Access Portal</div>", unsafe_allow_html=True)
+        
+        col1, col2, col3 = st.columns([1, 1.5, 1])
+        with col2:
+            tab1, tab2 = st.tabs(["Sign In", "Create Account"])
+            
+            with tab1:
+                with st.form("login_form"):
+                    username = st.text_input("Username")
+                    password = st.text_input("Password", type="password")
+                    st.markdown("<div class='primary-btn'>", unsafe_allow_html=True)
+                    sub = st.form_submit_button("Authenticate", use_container_width=True)
+                    st.markdown("</div>", unsafe_allow_html=True)
+                    if sub:
+                        user_id = self.db.verify_user(username, password)
+                        if user_id:
+                            st.session_state['user_id'] = user_id
+                            st.session_state['username'] = username
+                            st.rerun()
+                        else:
+                            st.error("Invalid credentials.")
+                            
+            with tab2:
+                with st.form("register_form"):
+                    new_user = st.text_input("Username")
+                    new_pass = st.text_input("Password", type="password")
+                    conf_pass = st.text_input("Confirm Password", type="password")
+                    st.markdown("<div class='primary-btn'>", unsafe_allow_html=True)
+                    sub_reg = st.form_submit_button("Register", use_container_width=True)
+                    st.markdown("</div>", unsafe_allow_html=True)
+                    if sub_reg:
+                        if new_pass == conf_pass and len(new_pass) >= 8:
+                            if self.db.create_user(new_user, new_pass):
+                                st.success("Account created. You can now sign in.")
+                            else:
+                                st.error("Username exists.")
+                        else:
+                            st.error("Invalid password criteria.")
+
+    def render_main_app(self):
+        user_id = st.session_state['user_id']
+        expenses = self.db.get_all_expenses(user_id)
+        analyzer = BudgetAnalyzer(expenses)
+        
+        # Hero
+        UIComponents.render_hero()
+
+        st.markdown("<div id='input-center'></div>", unsafe_allow_html=True)
+        
+        # Input Center
+        st.markdown("### Expense Logging")
+        tab_manual, tab_mpesa = st.tabs(["Manual Entry", "M-Pesa SMS"])
+        
+        with tab_mpesa:
+            with st.form("mpesa_form"):
+                st.markdown("<div style='color: #8E8E93; margin-bottom:10px;'>Paste Safaricom SMS for intelligent parsing</div>", unsafe_allow_html=True)
+                sms_text = st.text_area("SMS Content", placeholder="Ksh 150.00 paid to KHALID KHALID on...", label_visibility="collapsed", height=100)
+                st.markdown("<div class='primary-btn'>", unsafe_allow_html=True)
+                sub_sms = st.form_submit_button("Extract & Autofill", use_container_width=True)
+                st.markdown("</div>", unsafe_allow_html=True)
+                if sub_sms:
+                    amount_match = re.search(r'Ksh\s*([\d,]+\.?\d*)', sms_text, re.IGNORECASE)
+                    vendor_match = re.search(r'(?:paid to|sent to)\s*(.*?)\s*on', sms_text, re.IGNORECASE)
+                    if amount_match:
+                        st.session_state['parsed_amount'] = float(amount_match.group(1).replace(',', ''))
+                    if vendor_match:
+                        st.session_state['parsed_vendor'] = vendor_match.group(1).strip()
+                    st.success("Extracted! Check Manual Entry tab.")
+                    
+        with tab_manual:
+            with st.form("manual_form", clear_on_submit=True):
+                amt_val = st.session_state.get('parsed_amount', 0.0)
+                desc_val = st.session_state.get('parsed_vendor', "")
+                
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    amount = st.number_input("Amount (Ksh)", min_value=0.0, value=amt_val)
+                    category = st.selectbox("Category", ["Food & Dining", "Transport", "Academics", "Entertainment", "Rent", "Utilities", "Other"])
+                with col_b:
+                    date_val = st.date_input("Date", value=datetime.date.today())
+                    description = st.text_input("Entity / Description", value=desc_val)
+                
+                st.markdown("<div class='primary-btn'>", unsafe_allow_html=True)
+                if st.form_submit_button("Record Transaction", use_container_width=True):
+                    if amount > 0:
+                        self.db.add_expense(Expense(user_id=user_id, amount=amount, date=date_val.strftime("%Y-%m-%d"), description=description, category=category))
+                        if 'parsed_amount' in st.session_state: del st.session_state['parsed_amount']
+                        if 'parsed_vendor' in st.session_state: del st.session_state['parsed_vendor']
+                        st.success("Transaction recorded.")
                         st.rerun()
                     else:
-                        st.error("Invalid username or password.")
-                        
-        with tab2:
-            with st.form("register_form"):
-                r_username = st.text_input("Choose Username")
-                r_password = st.text_input("Create Password", type="password")
-                r_confirm = st.text_input("Confirm Password", type="password")
-                if st.form_submit_button("Register", use_container_width=True):
-                    if r_password != r_confirm:
-                        st.error("Passwords do not match!")
-                    elif len(r_password) < 8:
-                        st.error("Security Risk: Password must be at least 8 characters long!")
-                    elif not re.search(r"[A-Z]", r_password):
-                        st.error("Security Risk: Password must contain at least one uppercase letter!")
-                    elif not re.search(r"[a-z]", r_password):
-                        st.error("Security Risk: Password must contain at least one lowercase letter!")
-                    elif not re.search(r"[0-9]", r_password):
-                        st.error("Security Risk: Password must contain at least one numeric digit!")
-                    elif not r_username:
-                        st.error("Username cannot be empty")
-                    else:
-                        success = db.create_user(r_username, r_password)
-                        if success:
-                            st.success("Account created! Please switch to the Login tab.")
-                        else:
-                            st.error("Username already exists. Please choose another.")
-    
-    # Stop execution here if not logged in
-    st.stop()
+                        st.error("Amount must be greater than 0.")
+                st.markdown("</div>", unsafe_allow_html=True)
 
+        st.markdown("<br><hr style='border-color: rgba(255,255,255,0.05);'><br>", unsafe_allow_html=True)
 
-# --- DASHBOARD LOGIC (When Logged In) ---
-user_id = st.session_state['user_id']
-
-def load_data(uid):
-    expenses_list = db.get_all_expenses(uid)
-    analyzer = BudgetAnalyzer(expenses_list)
-    return expenses_list, analyzer
-
-expenses_list, analyzer = load_data(user_id)
-
-# --- EXPENSE CONTROLS ---
-with st.expander("➕ Record New Expense", expanded=True):
-    with st.form("expense_form", clear_on_submit=True):
-        amt_val = st.session_state.get('parsed_amount', 1.0)
-        desc_val = st.session_state.get('parsed_vendor', "")
+        # Overview Tabs
+        d_tab, g_tab, s_tab = st.tabs(["Overview", "Goals", "Settings"])
         
-        amount = st.number_input("Amount (Ksh)", min_value=1.0, value=amt_val, format="%f")
-        date_input = st.date_input("Date", value=datetime.date.today())
-        description = st.text_input("Description", value=desc_val, placeholder="e.g. Coffee at Campus")
-        category = st.selectbox("Category", [
-            "Food & Dining", "Transport", "Academics", 
-            "Entertainment", "Rent", "Utilities", 
-            "Photography & Tech Gear", "Logistics & Business", "Other"
-        ])
-        
-        submitted = st.form_submit_button("Add Expense", use_container_width=True)
-        if submitted:
-            new_expense = Expense(
-                user_id=user_id,
-                amount=amount,
-                date=date_input.strftime("%Y-%m-%d"),
-                description=description,
-                category=category
-            )
-            if 'parsed_amount' in st.session_state:
-                del st.session_state['parsed_amount']
-            if 'parsed_vendor' in st.session_state:
-                del st.session_state['parsed_vendor']
-            db.add_expense(new_expense)
-            st.success(f"Added {category} expense of Ksh {amount:,.2f}")
-            st.rerun()
+        with d_tab:
+            budget = st.session_state['monthly_budget']
+            spent = analyzer.get_total_expenses()
+            safe = analyzer.get_safe_daily_limit(budget)
+            burn = analyzer.get_projected_spending()
+            pct = analyzer.get_budget_status_percentage(budget)
+            
+            # Stylized Metric Cards
+            col1, col2, col3 = st.columns(3)
+            col4, col5 = st.columns(2)
+            
+            def metric_card(title, val, type_cls=""):
+                return f"""<div class='metric-card {type_cls}'>
+                    <div class='metric-title'>{title}</div>
+                    <div class='metric-value'>{val}</div>
+                </div>"""
+                
+            with col1: st.markdown(metric_card("Total Expenses", f"Ksh {spent:,.0f}"), unsafe_allow_html=True)
+            with col2: 
+                rem = max(0, budget - spent)
+                st.markdown(metric_card("Remaining Budget", f"Ksh {rem:,.0f}"), unsafe_allow_html=True)
+            with col3: 
+                cls_type = "metric-warn" if burn > budget else ""
+                st.markdown(metric_card("Projected Burn", f"Ksh {burn:,.0f}", cls_type), unsafe_allow_html=True)
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            with col4: st.markdown(metric_card("Safe-to-Spend (Daily)", f"Ksh {safe:,.0f}", "metric-safe"), unsafe_allow_html=True)
+            with col5: st.markdown(metric_card("Utilization", f"{pct:.1f}%", "metric-warn" if pct>=100 else ""), unsafe_allow_html=True)
 
-st.markdown("<br>", unsafe_allow_html=True)
-st.markdown("### 📱 M-Pesa Auto-Fill")
-st.markdown("Paste your Safaricom message here to auto-fill the manual form above.")
-with st.form("mpesa_form", clear_on_submit=True):
-    col_sms, col_btn = st.columns([3, 1])
-    with col_sms:
-        sms_text = st.text_input("Paste SMS", placeholder="e.g. Ksh150.00 paid to VENDOR X on 10/10...", label_visibility="collapsed")
-    with col_btn:
-        submitted = st.form_submit_button("Parse SMS", use_container_width=True)
-        
-    if submitted:
-        amount_match = re.search(r'Ksh\s*([\d,]+\.?\d*)', sms_text, re.IGNORECASE)
-        vendor_match = re.search(r'(?:paid to|sent to)\s*(.*?)\s*on', sms_text, re.IGNORECASE)
-        if amount_match:
-            st.session_state['parsed_amount'] = float(amount_match.group(1).replace(',', ''))
-        if vendor_match:
-            st.session_state['parsed_vendor'] = vendor_match.group(1).strip()
-        st.rerun()
-
-dash_tab, funds_tab, settings_tab = st.tabs(["📊 Dashboard View", "💰 Sinking Funds & Goals", "⚙️ Account & Settings"])
-
-with dash_tab:
-    monthly_budget = st.session_state['monthly_budget']
-    total_spent = analyzer.get_total_expenses()
-    budget_used_pct = analyzer.get_budget_status_percentage(monthly_budget)
-    projected_spend = analyzer.get_projected_spending()
-    safe_daily = analyzer.get_safe_daily_limit(monthly_budget)
-
-    # Budget Alerts
-    if budget_used_pct >= 100:
-        st.error(f"🚨 **Over Budget!** You have spent Ksh {total_spent:,.2f}, exceeding your budget of Ksh {monthly_budget:,.2f}.")
-    elif budget_used_pct >= 80:
-        st.warning(f"⚠️ **Warning!** You have spent {budget_used_pct:.1f}% of your budget. Slow down on spending!")
-    elif projected_spend > monthly_budget:
-        st.warning(f"🔥 **Burn Rate Alert:** At your current daily pace, you are projected to spend Ksh {projected_spend:,.2f} this month, crossing your limit!")
-    elif total_spent > 0:
-        st.success(f"✅ **On Track!** You've spent {budget_used_pct:.1f}% of your budget, and your burn rate is healthy.")
-
-    # KPIs / Metrics
-    st.markdown("<br>", unsafe_allow_html=True)
-    col1, col2, col3, collimit, col4 = st.columns(5)
-    with col1:
-        st.metric(label="Total Expenses", value=f"Ksh {total_spent:,.0f}")
-    with col2:
-        remaining = max(0, monthly_budget - total_spent)
-        st.metric(label="Remaining Budget", value=f"Ksh {remaining:,.0f}")
-    with col3:
-        st.metric(label="Burn Rate (Projected)", value=f"Ksh {projected_spend:,.0f}")
-    with collimit:
-        st.metric(label="Safe-to-Spend (Daily)", value=f"Ksh {safe_daily:,.0f}")
-    with col4:
-        st.metric(label="Budget Utilization", value=f"{budget_used_pct:.1f}%")
-
-    st.markdown("<br><hr>", unsafe_allow_html=True)
-
-    # Charts Section
-    col_chart1, col_chart2 = st.columns(2)
-
-    with col_chart1:
-        st.subheader("Spending by Category")
-        df_cat = analyzer.get_expenses_by_category()
-        if not df_cat.empty:
-            fig_pie = px.pie(
-                df_cat, 
-                names='category', 
-                values='amount', 
-                hole=0.4,
-                color_discrete_sequence=px.colors.qualitative.Pastel
-            )
-            fig_pie.update_layout(
-                margin=dict(t=0, b=0, l=0, r=0),
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                font_color="#e2e8f0"
-            )
-            st.plotly_chart(fig_pie, use_container_width=True)
-        else:
-            st.info("No expenses recorded yet. Add some to see the chart.")
-
-    with col_chart2:
-        st.subheader("Spending Over Time")
-        df_time = analyzer.get_expenses_over_time()
-        if not df_time.empty:
-            fig_bar = px.bar(
-                df_time, 
-                x='date', 
-                y='amount', 
-                text_auto='.2s',
-                color_discrete_sequence=['#38bdf8']
-            )
-            fig_bar.update_layout(
-                margin=dict(t=0, b=0, l=0, r=0),
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-                font_color="#e2e8f0",
-                xaxis_title="Date",
-                yaxis_title="Amount (Ksh)"
-            )
-            st.plotly_chart(fig_bar, use_container_width=True)
-        else:
-            st.info("No expenses recorded yet. Add some to see the chart.")
-
-    st.markdown("<br><hr>", unsafe_allow_html=True)
-
-    # Data Table Section
-    st.subheader("Recent Expenses Data")
-    if expenses_list:
-        df_display = pd.DataFrame([vars(e) for e in expenses_list])
-        # Drop internal data structure columns
-        df_display = df_display.drop(columns=['id', 'user_id'])
-        # Reorder columns
-        df_display = df_display[['date', 'category', 'description', 'amount']]
-        
-        st.dataframe(
-            df_display, 
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "date": st.column_config.DateColumn("Date"),
-                "category": st.column_config.TextColumn("Category"),
-                "description": st.column_config.TextColumn("Description"),
-                "amount": st.column_config.NumberColumn("Amount (Ksh)", format="Ksh %.2f")
-            }
-        )
-    else:
-        st.info("Your expense log is empty.")
-
-with funds_tab:
-    st.header("Sinking Funds & Goal Tracking")
-    st.markdown("Set aside small amounts over time for large targets like Tuition or Camera Gear.")
-    
-    with st.expander("➕ Create New Goal", expanded=False):
-        with st.form("new_goal_form", clear_on_submit=True):
-            g_name = st.text_input("Goal Name", placeholder="e.g. Tuition, Camera Lens")
-            g_target = st.number_input("Target Amount (Ksh)", min_value=1.0, step=500.0)
-            if st.form_submit_button("Create Goal", use_container_width=True):
-                from models import Goal
-                db.add_goal(Goal(name=g_name, target_amount=g_target, current_amount=0.0, user_id=user_id))
-                st.success("Goal created successfully!")
+            st.markdown("<br>", unsafe_allow_html=True)
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown("<div style='color:#8E8E93; margin-bottom:10px;'>Category Distribution</div>", unsafe_allow_html=True)
+                df_cat = analyzer.get_expenses_by_category()
+                if not df_cat.empty:
+                    fig = px.pie(df_cat, names='category', values='amount', hole=0.7, 
+                                 color_discrete_sequence=['#007AFF', '#00C7BE', '#5856D6', '#FF9500', '#FF3B30'])
+                    fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", margin=dict(t=0, b=0, l=0, r=0), font_color="#000000")
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    UIComponents.render_empty_state("No transactions yet")
+            with c2:
+                st.markdown("<div style='color:#8E8E93; margin-bottom:10px;'>Expenditure Flow</div>", unsafe_allow_html=True)
+                df_time = analyzer.get_expenses_over_time()
+                if not df_time.empty:
+                    fig = go.Figure(go.Scatter(x=df_time['date'], y=df_time['amount'], mode='lines+markers', line=dict(color='#007AFF', width=3), fill='tozeroy', fillcolor='rgba(0, 122, 255, 0.1)'))
+                    fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", margin=dict(t=0, b=0, l=0, r=0), font_color="#000000", xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor='rgba(0,0,0,0.05)'))
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    UIComponents.render_empty_state("No timeline data")
+                    
+        with g_tab:
+            st.markdown("### Sinking Funds")
+            with st.expander("Create Goal"):
+                with st.form("goal_form"):
+                    g_name = st.text_input("Target Name")
+                    g_amt = st.number_input("Target Amount", min_value=0.0)
+                    if st.form_submit_button("Initialize Goal"):
+                        self.db.add_goal(Goal(name=g_name, target_amount=g_amt, current_amount=0.0, user_id=user_id))
+                        st.rerun()
+            
+            goals = self.db.get_all_goals(user_id)
+            if not goals:
+                UIComponents.render_empty_state("No active goals")
+            else:
+                for g in goals:
+                    st.markdown(f"**{g.name}**")
+                    p = min(1.0, g.current_amount / g.target_amount) if g.target_amount > 0 else 0
+                    st.markdown(f"<span style='color:#AEAEB2; font-size:0.9rem;'>{p*100:.1f}% — Ksh {g.current_amount:,.0f} of {g.target_amount:,.0f}</span>", unsafe_allow_html=True)
+                    st.progress(p)
+                    
+                    with st.form(f"fund_{g.id}"):
+                        c1, c2 = st.columns([3, 1])
+                        with c1: add = st.number_input("Add Funds", min_value=0.0, key=f"f_{g.id}", label_visibility="collapsed")
+                        with c2: 
+                            if st.form_submit_button("Fund"):
+                                self.db.add_funds_to_goal(g.id, user_id, add)
+                                st.rerun()
+                                
+        with s_tab:
+            st.markdown("### Preferences")
+            b_input = st.number_input("Basline Monthly Budget (Ksh)", value=st.session_state['monthly_budget'])
+            if b_input != st.session_state['monthly_budget']:
+                st.session_state['monthly_budget'] = b_input
                 st.rerun()
                 
-    st.markdown("<hr>", unsafe_allow_html=True)
-    goals = db.get_all_goals(user_id)
-    
-    if not goals:
-        st.info("No sinking funds yet! Start saving for your next target.")
-    else:
-        for g in goals:
-            pct = min(1.0, g.current_amount / g.target_amount)
-            st.markdown(f"#### {g.name}")
-            st.markdown(f"**Ksh {g.current_amount:,.0f}** saved out of **Ksh {g.target_amount:,.0f}** ({pct*100:.1f}%)")
-            st.progress(pct)
-            
-            with st.form(f"fund_{g.id}", clear_on_submit=True):
-                col_amt, col_sub = st.columns([2, 1])
-                with col_amt:
-                    add_amt = st.number_input("Add Funds (Ksh)", min_value=1.0, step=100.0, key=f"amt_{g.id}", label_visibility="collapsed")
-                with col_sub:
-                    if st.form_submit_button("Contribute", use_container_width=True):
-                        db.add_funds_to_goal(g.id, user_id, add_amt)
-                        st.success(f"Added Ksh {add_amt} to {g.name}!")
-                        st.rerun()
-            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("End Session"):
+                st.session_state['user_id'] = None
+                st.rerun()
 
-with settings_tab:
-    st.header("⚙️ Budget Settings & Account")
-    st.markdown("Manage your baseline tracking settings and active session.")
-    
-    with st.expander("Monthly Budget Control", expanded=True):
-        budget_input = st.number_input("Monthly Budget (Ksh)", value=st.session_state['monthly_budget'], step=1000.0)
-        if budget_input != st.session_state['monthly_budget']:
-            st.session_state['monthly_budget'] = budget_input
-            st.rerun()
-            
-    with st.expander("Authentication", expanded=True):
-        st.markdown(f"**Logged in as:** `{st.session_state['username']}`")
-        if st.button("🚪 Logout", use_container_width=True):
-            st.session_state['user_id'] = None
-            st.session_state['username'] = None
-            st.rerun()
+if __name__ == "__main__":
+    app = ExpenseTrackerApp()
+    app.run()
