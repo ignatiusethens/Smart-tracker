@@ -380,28 +380,28 @@ class ExpenseTrackerApp:
             
             with col_market:
                 st.markdown("""
-                    <div class="auth-marketing-col">
-                        <div class="badge">✨ New: AI Budgeting Insights v2.0</div>
-                        <h1 class="marketing-title">Master Your <br><span>Student Finances</span><br> With Ease.</h1>
-                        
-                        <ul class="feature-list">
-                            <li><div class="feature-icon">📊</div> Real-time expense tracking & analytics</li>
-                            <li><div class="feature-icon">🤖</div> Smart AI-driven budget recommendations</li>
-                            <li><div class="feature-icon">🎯</div> Sinking funds for long-term goals</li>
-                        </ul>
-                        
-                        <div class="social-proof">
-                            <div class="avatar-group">
-                                <div class="avatar" style="background:#DBEAFE;"></div>
-                                <div class="avatar" style="background:#BBF7D0;"></div>
-                                <div class="avatar" style="background:#FEF08A;"></div>
-                            </div>
-                            <div class="proof-text">
-                                Join <strong>10,000+</strong> students managing<br>their campus life effectively!
-                            </div>
-                        </div>
-                    </div>
-                """, unsafe_allow_html=True)
+<div class="auth-marketing-col">
+<div class="badge">✨ New: AI Budgeting Insights v2.0</div>
+<h1 class="marketing-title">Master Your <br><span>Student Finances</span><br> With Ease.</h1>
+
+<ul class="feature-list">
+<li><div class="feature-icon">📊</div> Real-time expense tracking & analytics</li>
+<li><div class="feature-icon">🤖</div> Smart AI-driven budget recommendations</li>
+<li><div class="feature-icon">🎯</div> Sinking funds for long-term goals</li>
+</ul>
+
+<div class="social-proof">
+<div class="avatar-group">
+<div class="avatar" style="background:#DBEAFE;"></div>
+<div class="avatar" style="background:#BBF7D0;"></div>
+<div class="avatar" style="background:#FEF08A;"></div>
+</div>
+<div class="proof-text">
+Join <strong>10,000+</strong> students managing<br>their campus life effectively!
+</div>
+</div>
+</div>
+""", unsafe_allow_html=True)
 
             with col_form:
                 st.markdown("<div style='padding: 40px;'>", unsafe_allow_html=True)
@@ -428,13 +428,13 @@ class ExpenseTrackerApp:
                                 st.error("Invalid credentials.")
                                 
                     st.markdown("""
-                        <div style="text-align:center; margin:24px 0; position:relative;">
-                            <hr style="border:none; border-top:1px solid var(--border-color); margin:0;" />
-                            <span style="position:absolute; top:-10px; left:50%; transform:translateX(-50%); background:var(--bg-white); padding:0 10px; color:var(--text-muted); font-size:0.875rem;">Or continue with</span>
-                        </div>
-                        <button class="social-btn"><span style="margin-right:10px;">G</span> Continue with Google</button>
-                        <button class="social-btn"><span style="margin-right:10px;">Git</span> Continue with GitHub</button>
-                    """, unsafe_allow_html=True)
+<div style="text-align:center; margin:24px 0; position:relative;">
+    <hr style="border:none; border-top:1px solid var(--border-color); margin:0;" />
+    <span style="position:absolute; top:-10px; left:50%; transform:translateX(-50%); background:var(--bg-white); padding:0 10px; color:var(--text-muted); font-size:0.875rem;">Or continue with</span>
+</div>
+<button class="social-btn"><span style="margin-right:10px;">G</span> Continue with Google</button>
+<button class="social-btn"><span style="margin-right:10px;">Git</span> Continue with GitHub</button>
+""", unsafe_allow_html=True)
                             
                 with tab_signup:
                     with st.form("register_form", clear_on_submit=True):
