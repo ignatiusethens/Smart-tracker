@@ -75,6 +75,27 @@ class DatabaseManager:
                 return user.id
             return None
 
+    def get_or_create_oauth_user(self, email: str, provider: str) -> int:
+        """
+        Creates or retrieves a user via OAuth payload.
+        Since they don't have a standard password, we use a randomized string and bcrypt it.
+        We ensure it falls under the standard DBUser model to retain standard relationship rules.
+        """
+        with self.Session() as session:
+            existing = session.query(DBUser).filter_by(username=email).first()
+            if existing:
+                return existing.id
+            
+            import secrets
+            rand_pwd = secrets.token_hex(32)
+            salt = bcrypt.gensalt()
+            hashed = bcrypt.hashpw(rand_pwd.encode('utf-8'), salt).decode('utf-8')
+            
+            new_user = DBUser(username=email, password_hash=hashed)
+            session.add(new_user)
+            session.commit()
+            return new_user.id
+
     def add_expense(self, expense: Expense) -> None:
         """Inserts a new expense record belonging to a specific user"""
         with self.Session() as session:

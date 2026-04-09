@@ -4,8 +4,58 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 import re
+import os
+import requests
+import urllib.parse
 from models import Expense, BudgetAnalyzer, Goal, InsightsEngine
 from database import DatabaseManager
+
+class OAuthManager:
+    @staticmethod
+    def get_google_auth_url():
+        client_id = os.environ.get("GOOGLE_CLIENT_ID")
+        if client_id:
+            # Real OAuth flow URL
+            redirect_uri = urllib.parse.quote("http://localhost:8501/")
+            return f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope=email%20profile"
+        return "?oauth_mock=google"
+
+    @staticmethod
+    def get_github_auth_url():
+        client_id = os.environ.get("GITHUB_CLIENT_ID")
+        if client_id:
+            redirect_uri = urllib.parse.quote("http://localhost:8501/")
+            return f"https://github.com/login/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&scope=user:email"
+        return "?oauth_mock=github"
+
+    @staticmethod
+    def handle_callback(db: DatabaseManager):
+        if 'oauth_handled' in st.session_state and st.session_state['oauth_handled']:
+            return
+
+        params = st.query_params
+        if "oauth_mock" in params:
+            provider = params["oauth_mock"]
+            mock_email = f"demo_{provider}@student.edu"
+            
+            user_id = db.get_or_create_oauth_user(mock_email, provider)
+            st.session_state['user_id'] = user_id
+            st.session_state['username'] = mock_email
+            st.session_state['oauth_handled'] = True
+            
+            st.toast(f"Simulating OAuth Login for {provider.capitalize()}! No Client ID found.", icon="🔑")
+            st.query_params.clear()
+            st.rerun()
+
+        elif "code" in params:
+            # Here you would:
+            # 1. requests.post(token_url, data={code, client_id, client_secret})
+            # 2. requests.get(user_info_url, headers={'Authorization': 'Bearer ...'})
+            # 3. Handle actual db user creation with true email
+            # We add a toast to indicate we caught the code and redirect
+            st.toast("Caught real OAuth code, token exchange needed!", icon="🔄")
+            st.query_params.clear()
+            st.rerun()
 
 class ThemeManager:
     @staticmethod
@@ -362,6 +412,7 @@ class ExpenseTrackerApp:
 
     def run(self):
         ThemeManager.apply_theme()
+        OAuthManager.handle_callback(self.db)
         
         if st.session_state['user_id'] is None:
             self.render_auth()
@@ -427,13 +478,13 @@ Join <strong>10,000+</strong> students managing<br>their campus life effectively
                             else:
                                 st.error("Invalid credentials.")
                                 
-                    st.markdown("""
+                    st.markdown(f"""
 <div style="text-align:center; margin:24px 0; position:relative;">
     <hr style="border:none; border-top:1px solid var(--border-color); margin:0;" />
     <span style="position:absolute; top:-10px; left:50%; transform:translateX(-50%); background:var(--bg-white); padding:0 10px; color:var(--text-muted); font-size:0.875rem;">Or continue with</span>
 </div>
-<button class="social-btn"><span style="margin-right:10px; display:flex; align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20px" height="20px"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C34.7 32.8 30 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.1 8 3.1l5.7-5.7C34.1 5.8 29.3 3.9 24 3.9 12.9 3.9 4 12.9 4 24s8.9 20.1 20 20.1c11.1 0 20-8.9 20-20.1 0-1.4-.2-2.7-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 17.5 19 15.9 24 15.9c3.1 0 5.9 1.1 8 3.1l5.7-5.7C34.1 9.8 29.3 7.9 24 7.9c-7.7 0-14.4 4.3-17.7 10.8z"/><path fill="#4CAF50" d="M24 44.1c5.1 0 9.8-1.7 13.4-4.7l-6.2-5c-2.1 1.4-4.5 2.1-7.2 2.1-5 0-9.3-3.1-11.1-7.6l-6.6 5.1C9.6 39.8 16.3 44.1 24 44.1z"/><path fill="#1976D2" d="M43.6 20.1h-1.6V20H24v8h11.3c-.7 3.3-2.6 6-5.1 7.6l6.2 5c3.7-3.4 7.2-8.9 7.2-16.5 0-1.4-.2-2.7-.4-3.9z"/></svg></span> Continue with Google</button>
-<button class="social-btn"><span style="margin-right:10px; display:flex; align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg></span> Continue with GitHub</button>
+<a href="{OAuthManager.get_google_auth_url()}" class="social-btn" style="text-decoration:none;"><span style="margin-right:10px; display:flex; align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20px" height="20px"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C34.7 32.8 30 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.1 8 3.1l5.7-5.7C34.1 5.8 29.3 3.9 24 3.9 12.9 3.9 4 12.9 4 24s8.9 20.1 20 20.1c11.1 0 20-8.9 20-20.1 0-1.4-.2-2.7-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 17.5 19 15.9 24 15.9c3.1 0 5.9 1.1 8 3.1l5.7-5.7C34.1 9.8 29.3 7.9 24 7.9c-7.7 0-14.4 4.3-17.7 10.8z"/><path fill="#4CAF50" d="M24 44.1c5.1 0 9.8-1.7 13.4-4.7l-6.2-5c-2.1 1.4-4.5 2.1-7.2 2.1-5 0-9.3-3.1-11.1-7.6l-6.6 5.1C9.6 39.8 16.3 44.1 24 44.1z"/><path fill="#1976D2" d="M43.6 20.1h-1.6V20H24v8h11.3c-.7 3.3-2.6 6-5.1 7.6l6.2 5c3.7-3.4 7.2-8.9 7.2-16.5 0-1.4-.2-2.7-.4-3.9z"/></svg></span> Continue with Google</a>
+<a href="{OAuthManager.get_github_auth_url()}" class="social-btn" style="text-decoration:none;"><span style="margin-right:10px; display:flex; align-items:center;"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg></span> Continue with GitHub</a>
 """, unsafe_allow_html=True)
                             
                 with tab_signup:
