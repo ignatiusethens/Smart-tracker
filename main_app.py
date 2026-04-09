@@ -159,9 +159,8 @@ class UIComponents:
     def render_hero():
         st.markdown('''
             <div style="padding: 4rem 0 2rem 0;">
-                <div class="hero-title">Frictionless Finance.</div>
-                <div class="hero-title" style="color: #8E8E93; background: none; -webkit-text-fill-color: #8E8E93;">Smarter Student Life.</div>
-                <div class="hero-subtitle">Designed for macOS. Native to your wallet.</div>
+                <div class="hero-title" style="font-size: clamp(2rem, 5vw, 3rem);">SMART STUDENT EXPENSE TRACKER</div>
+                <div class="hero-subtitle" style="margin-top: 1rem; max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.5;">Take complete control of your university finances. Featuring intelligent M-Pesa SMS parsing, automated budget insights, and dynamic daily expenditure limits to keep your spending inherently frictionless. Start tracking today.</div>
             </div>
         ''', unsafe_allow_html=True)
         # Visual Anchor
