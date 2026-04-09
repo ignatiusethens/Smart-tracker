@@ -110,3 +110,74 @@ class BudgetAnalyzer:
         days_left = max(1, days_in_month - today.day + 1)
         
         return remaining_budget / days_left
+
+class InsightsEngine:
+    """
+    Synthesizes raw financial data from the BudgetAnalyzer into conversational 
+    paragraphs and actionable recommendations.
+    """
+    def __init__(self, analyzer: BudgetAnalyzer, monthly_budget: float):
+        self.analyzer = analyzer
+        self.monthly_budget = monthly_budget
+        
+    def get_financial_translation(self) -> str:
+        spent = self.analyzer.get_total_expenses()
+        rem = max(0, self.monthly_budget - spent)
+        burn = self.analyzer.get_projected_spending()
+        safe_daily = self.analyzer.get_safe_daily_limit(self.monthly_budget)
+        
+        today = date.today()
+        days_in_month = calendar.monthrange(today.year, today.month)[1]
+        days_left = max(1, days_in_month - today.day + 1)
+        
+        if burn > self.monthly_budget:
+            # Over or projecting to over
+            avg = self.analyzer.get_daily_average_this_month()
+            if avg > 0:
+                run_out_days = int(rem / avg) if rem > 0 else 0
+                run_out_str = f"run out of money in {run_out_days} days"
+            else:
+                run_out_str = "exceed your budget soon"
+            projection_str = run_out_str
+        else:
+            surplus = self.monthly_budget - burn
+            projection_str = f"end the month with a surplus of Ksh {surplus:,.0f}"
+            
+        return f"You have spent Ksh {spent:,.0f} so far this month, leaving you with Ksh {rem:,.0f}. Based on your current spending habits, you are projected to {projection_str}. This means your strict daily safe-to-spend limit is currently Ksh {safe_daily:,.0f}."
+        
+    def get_actionable_recommendation(self) -> dict:
+        burn = self.analyzer.get_projected_spending()
+        pct = self.analyzer.get_budget_status_percentage(self.monthly_budget)
+        
+        today = date.today()
+        days_in_month = calendar.monthrange(today.year, today.month)[1]
+        days_left = days_in_month - today.day + 1
+        
+        if burn > self.monthly_budget:
+            # Condition A
+            cat_df = self.analyzer.get_expenses_by_category()
+            if not cat_df.empty:
+                top_cat = cat_df.iloc[0]['category']
+            else:
+                top_cat = "various things"
+            return {
+                'type': 'danger',
+                'msg': f"⚠️ **Recommendation:** You are spending too fast. You have spent heavily on **{top_cat}**. Try to purposefully pause or minimize spending in this category for the next week to bring your daily average back into alignment."
+            }
+        elif pct > 80 and days_left >= 7:
+            # Condition B
+            return {
+                'type': 'warning',
+                'msg': f"⚠️ **Recommendation:** Your budget utilization is sitting heavily at {pct:.1f}% with {days_left} days still remaining. Strictly adhere to your safe-to-spend daily limit to avoid falling into deficit."
+            }
+        else:
+            # Condition C
+            surplus = self.monthly_budget - burn
+            amt_to_save = surplus * 0.25 # Suggested save is 25% of the run-rate surplus
+            if amt_to_save < 100:
+                amt_to_save = 100
+                
+            return {
+                'type': 'success',
+                'msg': f"✅ **Recommendation:** You are well under budget and projecting perfectly! Consider taking Ksh {amt_to_save:,.0f} from your remaining balance right now and routing it toward one of your Sinking Funds."
+            }

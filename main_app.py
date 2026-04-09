@@ -4,7 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 import re
-from models import Expense, BudgetAnalyzer, Goal
+from models import Expense, BudgetAnalyzer, Goal, InsightsEngine
 from database import DatabaseManager
 
 class ThemeManager:
@@ -255,55 +255,6 @@ class ExpenseTrackerApp:
         # Hero
         UIComponents.render_hero(show_cta=True, show_subtitle=False)
 
-        st.markdown("<div id='input-center'></div>", unsafe_allow_html=True)
-        
-        # Input Center
-        st.markdown("### Expense Logging")
-        tab_manual, tab_mpesa = st.tabs(["Manual Entry", "M-Pesa SMS"])
-        
-        with tab_mpesa:
-            with st.form("mpesa_form"):
-                st.markdown("<div style='color: #86868B; margin-bottom:10px;'>Paste Safaricom SMS for intelligent parsing</div>", unsafe_allow_html=True)
-                sms_text = st.text_area("SMS Content", placeholder="Ksh 150.00 paid to KHALID KHALID on...", label_visibility="collapsed", height=100)
-                st.markdown("<div class='primary-btn'>", unsafe_allow_html=True)
-                sub_sms = st.form_submit_button("Extract & Autofill", use_container_width=True)
-                st.markdown("</div>", unsafe_allow_html=True)
-                if sub_sms:
-                    amount_match = re.search(r'Ksh\s*([\d,]+\.?\d*)', sms_text, re.IGNORECASE)
-                    vendor_match = re.search(r'(?:paid to|sent to)\s*(.*?)\s*on', sms_text, re.IGNORECASE)
-                    if amount_match:
-                        st.session_state['parsed_amount'] = float(amount_match.group(1).replace(',', ''))
-                    if vendor_match:
-                        st.session_state['parsed_vendor'] = vendor_match.group(1).strip()
-                    st.success("Extracted! Check Manual Entry tab.")
-                    
-        with tab_manual:
-            with st.form("manual_form", clear_on_submit=True):
-                amt_val = st.session_state.get('parsed_amount', 0.0)
-                desc_val = st.session_state.get('parsed_vendor', "")
-                
-                col_a, col_b = st.columns(2)
-                with col_a:
-                    amount = st.number_input("Amount (Ksh)", min_value=0.0, value=amt_val)
-                    category = st.selectbox("Category", ["Food & Dining", "Transport", "Academics", "Entertainment", "Rent", "Utilities", "Other"])
-                with col_b:
-                    date_val = st.date_input("Date", value=datetime.date.today())
-                    description = st.text_input("Entity / Description", value=desc_val)
-                
-                st.markdown("<div class='primary-btn'>", unsafe_allow_html=True)
-                if st.form_submit_button("Record Transaction", use_container_width=True):
-                    if amount > 0:
-                        self.db.add_expense(Expense(user_id=user_id, amount=amount, date=date_val.strftime("%Y-%m-%d"), description=description, category=category))
-                        if 'parsed_amount' in st.session_state: del st.session_state['parsed_amount']
-                        if 'parsed_vendor' in st.session_state: del st.session_state['parsed_vendor']
-                        st.success("Transaction recorded.")
-                        st.rerun()
-                    else:
-                        st.error("Amount must be greater than 0.")
-                st.markdown("</div>", unsafe_allow_html=True)
-
-        st.markdown("<br><hr style='border-color: rgba(255,255,255,0.05);'><br>", unsafe_allow_html=True)
-
         # Overview Tabs
         d_tab, g_tab, s_tab = st.tabs(["Overview", "Goals", "Settings"])
         
@@ -314,9 +265,9 @@ class ExpenseTrackerApp:
             burn = analyzer.get_projected_spending()
             pct = analyzer.get_budget_status_percentage(budget)
             
-            # Stylized Metric Cards
-            col1, col2, col3 = st.columns(3)
-            col4, col5 = st.columns(2)
+            # --- 1. TOP SECTION (At a Glance) ---
+            st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
+            col1, col2 = st.columns(2)
             
             def metric_card(title, val, type_cls=""):
                 return f"""<div class='metric-card {type_cls}'>
@@ -324,17 +275,80 @@ class ExpenseTrackerApp:
                     <div class='metric-value'>{val}</div>
                 </div>"""
                 
-            with col1: st.markdown(metric_card("Total Expenses", f"Ksh {spent:,.0f}"), unsafe_allow_html=True)
+            with col1: st.markdown(metric_card("Total Expenses (So Far)", f"Ksh {spent:,.0f}"), unsafe_allow_html=True)
             with col2: 
                 rem = max(0, budget - spent)
                 st.markdown(metric_card("Remaining Budget", f"Ksh {rem:,.0f}"), unsafe_allow_html=True)
-            with col3: 
-                cls_type = "metric-warn" if burn > budget else ""
-                st.markdown(metric_card("Projected Burn", f"Ksh {burn:,.0f}", cls_type), unsafe_allow_html=True)
-            
+                
             st.markdown("<br>", unsafe_allow_html=True)
-            with col4: st.markdown(metric_card("Safe-to-Spend (Daily)", f"Ksh {safe:,.0f}", "metric-safe"), unsafe_allow_html=True)
-            with col5: 
+            
+            # --- 2. MIDDLE SECTION (Insights & Recommendations) ---
+            st.markdown("### Financial Clarity")
+            insights = InsightsEngine(analyzer, budget)
+            st.info(insights.get_financial_translation(), icon="💡")
+            
+            rec = insights.get_actionable_recommendation()
+            if rec['type'] == 'danger':
+                st.error(rec['msg'], icon="🛑")
+            elif rec['type'] == 'warning':
+                st.warning(rec['msg'], icon="⚠️")
+            else:
+                st.success(rec['msg'], icon="✅")
+                
+            st.markdown("<br><hr style='border-color: rgba(0,0,0,0.05);'><br>", unsafe_allow_html=True)
+            
+            # --- 3. BOTTOM SECTION (Action Center / Logging) ---
+            st.markdown("<div id='input-center'></div>", unsafe_allow_html=True)
+            st.markdown("### Quick Log Center")
+            tab_manual, tab_mpesa = st.tabs(["Manual Entry", "M-Pesa SMS Auto-fill"])
+            
+            with tab_mpesa:
+                with st.form("mpesa_form"):
+                    st.markdown("<div style='color: #86868B; margin-bottom:10px;'>Paste Safaricom SMS for intelligent parsing</div>", unsafe_allow_html=True)
+                    sms_text = st.text_area("SMS Content", placeholder="Ksh 150.00 paid to KHALID KHALID on...", label_visibility="collapsed", height=100)
+                    st.markdown("<div class='primary-btn'>", unsafe_allow_html=True)
+                    sub_sms = st.form_submit_button("Extract & Autofill", use_container_width=True)
+                    st.markdown("</div>", unsafe_allow_html=True)
+                    if sub_sms:
+                        amount_match = re.search(r'Ksh\s*([\d,]+\.?\d*)', sms_text, re.IGNORECASE)
+                        vendor_match = re.search(r'(?:paid to|sent to)\s*(.*?)\s*on', sms_text, re.IGNORECASE)
+                        if amount_match:
+                            st.session_state['parsed_amount'] = float(amount_match.group(1).replace(',', ''))
+                        if vendor_match:
+                            st.session_state['parsed_vendor'] = vendor_match.group(1).strip()
+                        st.success("Extracted! Check Manual Entry tab to confirm.")
+                        
+            with tab_manual:
+                with st.form("manual_form", clear_on_submit=True):
+                    amt_val = st.session_state.get('parsed_amount', 0.0)
+                    desc_val = st.session_state.get('parsed_vendor', "")
+                    
+                    col_a, col_b = st.columns(2)
+                    with col_a:
+                        amount = st.number_input("Amount (Ksh)", min_value=0.0, value=amt_val)
+                        category = st.selectbox("Category", ["Food & Dining", "Transport", "Academics", "Entertainment", "Rent", "Utilities", "Other"])
+                    with col_b:
+                        date_val = st.date_input("Date", value=datetime.date.today())
+                        description = st.text_input("Entity / Description", value=desc_val)
+                    
+                    st.markdown("<div class='primary-btn'>", unsafe_allow_html=True)
+                    if st.form_submit_button("Record Transaction", use_container_width=True):
+                        if amount > 0:
+                            self.db.add_expense(Expense(user_id=user_id, amount=amount, date=date_val.strftime("%Y-%m-%d"), description=description, category=category))
+                            if 'parsed_amount' in st.session_state: del st.session_state['parsed_amount']
+                            if 'parsed_vendor' in st.session_state: del st.session_state['parsed_vendor']
+                            st.success("Transaction recorded.")
+                            st.rerun()
+                        else:
+                            st.error("Amount must be greater than 0.")
+                    st.markdown("</div>", unsafe_allow_html=True)
+                    
+            st.markdown("<br><hr style='border-color: rgba(0,0,0,0.05);'><br>", unsafe_allow_html=True)
+            
+            # --- 4. ADVANCED CHARTS & GRAPHS ---
+            col_srd, col_util = st.columns(2)
+            with col_srd: st.markdown(metric_card("Safe-to-Spend (Daily)", f"Ksh {safe:,.0f}", "metric-safe"), unsafe_allow_html=True)
+            with col_util: 
                 util_cls = "metric-empty" if pct == 0 else ("metric-warn" if pct>=80 else "")
                 st.markdown(metric_card("Utilization", f"{pct:.1f}%", util_cls), unsafe_allow_html=True)
 
