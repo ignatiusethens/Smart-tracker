@@ -18,9 +18,18 @@ class ThemeManager:
         )
         custom_css = """
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;800&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;800&family=Inter:wght@400;500;600;700&display=swap');
 
             :root {
+                --bg-primary: #F3F4F6;
+                --bg-white: #FFFFFF;
+                --text-main: #111827;
+                --text-muted: #6B7280;
+                --brand-blue: #3B82F6;
+                --brand-blue-hover: #2563EB;
+                --border-color: #E5E7EB;
+                --input-bg: #F9FAFB;
+                
                 --apple-bg: #F2F2F7;
                 --apple-card: rgba(255, 255, 255, 0.35);
                 --apple-text: #1C1C1E;
@@ -35,16 +44,16 @@ class ThemeManager:
             }
 
             html, body {
-                background-color: var(--apple-bg);
+                background-color: var(--bg-primary);
             }
             [class*="css"] {
-                font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif !important;
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
             }
             .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"], 
             [data-baseweb="tab-panel"], div[role="tabpanel"], div[data-testid="stVerticalBlock"],
             div[data-testid="stHorizontalBlock"], div[data-testid="column"] {
                 background-color: transparent !important;
-                color: var(--apple-text);
+                color: var(--text-main);
             }
             
             @keyframes mesh-float {
@@ -56,21 +65,15 @@ class ThemeManager:
 
             .mesh-shape-1 {
                 position: fixed; top: -10%; left: -10%; width: 50vw; height: 50vw;
-                background: radial-gradient(circle, rgba(0, 122, 255, 0.25) 0%, rgba(255,255,255,0) 70%);
+                background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, rgba(255,255,255,0) 70%);
                 border-radius: 50%; filter: blur(60px); z-index: -10;
                 animation: mesh-float 20s infinite alternate; pointer-events: none;
             }
             .mesh-shape-2 {
                 position: fixed; bottom: -10%; right: -10%; width: 60vw; height: 60vw;
-                background: radial-gradient(circle, rgba(52, 199, 89, 0.20) 0%, rgba(255,255,255,0) 70%);
+                background: radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, rgba(255,255,255,0) 70%);
                 border-radius: 50%; filter: blur(80px); z-index: -10;
                 animation: mesh-float 25s infinite alternate-reverse; pointer-events: none;
-            }
-            .mesh-shape-3 {
-                position: fixed; top: 20%; right: 20%; width: 40vw; height: 40vw;
-                background: radial-gradient(circle, rgba(255, 204, 0, 0.18) 0%, rgba(255,255,255,0) 70%);
-                border-radius: 50%; filter: blur(70px); z-index: -10;
-                animation: mesh-float 22s infinite alternate; pointer-events: none;
             }
             
             #MainMenu {visibility: hidden;}
@@ -81,7 +84,7 @@ class ThemeManager:
                 text-align: center;
                 font-size: clamp(2.5rem, 6vw, 4rem);
                 font-weight: 800;
-                background: linear-gradient(180deg, #000000 0%, #8E8E93 100%);
+                background: linear-gradient(180deg, #111827 0%, #4B5563 100%);
                 -webkit-background-clip: text;
                 -webkit-text-fill-color: transparent;
                 margin-bottom: 0.5rem;
@@ -89,106 +92,226 @@ class ThemeManager:
             }
             .hero-subtitle {
                 text-align: center;
-                color: var(--apple-text-muted);
+                color: var(--text-muted);
                 font-size: 1.2rem;
                 font-weight: 400;
                 margin-bottom: 3rem;
+            }
+
+            .auth-container {
+                background-color: var(--bg-white);
+                border-radius: 20px;
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+                border: 1px solid var(--border-color);
+                overflow: hidden;
+            }
+            
+            .auth-marketing-col {
+                padding: 40px;
+                height: 100%;
+                background: radial-gradient(120% 120% at 50% -20%, rgba(59, 130, 246, 0.1) 0%, transparent 100%);
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+
+            .badge {
+                display: inline-flex;
+                align-items: center;
+                padding: 6px 12px;
+                background-color: rgba(59, 130, 246, 0.1);
+                color: var(--brand-blue);
+                border-radius: 9999px;
+                font-size: 0.875rem;
+                font-weight: 600;
+                margin-bottom: 24px;
+                width: max-content;
+            }
+
+            .marketing-title {
+                font-size: 2.75rem;
+                line-height: 1.2;
+                font-weight: 700;
+                color: var(--text-main);
+                margin-bottom: 24px;
+            }
+
+            .marketing-title span {
+                color: var(--brand-blue);
+            }
+            
+            .feature-list {
+                list-style: none;
+                padding: 0;
+                margin: 0 0 32px 0;
+            }
+            .feature-list li {
+                display: flex;
+                align-items: center;
+                margin-bottom: 16px;
+                color: var(--text-main);
+                font-weight: 500;
+            }
+            .feature-icon {
+                color: var(--brand-blue);
+                background-color: #EFF6FF;
+                width: 32px;
+                height: 32px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-right: 12px;
+                font-size: 14px;
+            }
+
+            .social-proof {
+                display: flex;
+                align-items: center;
+                margin-top: 40px;
+                padding-top: 32px;
+                border-top: 1px solid var(--border-color);
+            }
+            .avatar-group {
+                display: flex;
+                margin-right: 16px;
+            }
+            .avatar {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                border: 2px solid #FFF;
+                margin-left: -12px;
+                background-color: #E5E7EB;
+            }
+            .avatar:first-child { margin-left: 0; }
+            .proof-text {
+                font-size: 0.875rem;
+                color: var(--text-muted);
+            }
+            .proof-text strong {
+                color: var(--text-main);
+                font-weight: 600;
             }
 
             div[data-baseweb="input"] > div, 
             div[data-baseweb="select"] > div, 
             div[data-baseweb="number-input"] > div,
             textarea {
-                background-color: rgba(29, 29, 31, 0.05) !important;
-                border: 1px solid var(--apple-border) !important;
-                border-radius: 12px !important;
-                color: var(--apple-text) !important;
+                background-color: var(--input-bg) !important;
+                border: 1px solid var(--border-color) !important;
+                border-radius: 8px !important;
+                color: var(--text-main) !important;
             }
             div[data-baseweb="input"] > div:focus-within, 
             div[data-baseweb="select"] > div:focus-within {
-                border-color: var(--sf-blue) !important;
-                box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.2) !important;
+                border-color: var(--brand-blue) !important;
+                box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
             }
 
             div.stButton > button:first-child {
-                background: rgba(255, 255, 255, 0.7);
-                color: var(--apple-text);
-                border: 1px solid var(--apple-border);
-                border-radius: 14px;
+                background: var(--bg-white);
+                color: var(--text-main);
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
                 font-weight: 500;
                 transition: all 0.3s ease;
-                backdrop-filter: blur(20px);
-                -webkit-backdrop-filter: blur(20px);
             }
             div.stButton.primary-btn > button:first-child {
-                background: var(--sf-blue);
+                background: var(--brand-blue);
                 color: #FFFFFF;
                 border: none;
-                box-shadow: 0 4px 15px rgba(0, 122, 255, 0.3);
+                box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
                 font-weight: 600;
+                padding-top: 10px;
+                padding-bottom: 10px;
             }
             div.stButton > button:first-child:hover {
-                background: rgba(0, 0, 0, 0.1);
+                background: var(--bg-primary);
                 transform: translateY(-1px);
             }
             div.stButton.primary-btn > button:first-child:hover {
-                background: #0A84FF;
+                background: var(--brand-blue-hover);
                 color: #FFFFFF;
                 transform: translateY(-2px);
-                box-shadow: 0 6px 20px rgba(0, 122, 255, 0.4);
+                box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.3);
+            }
+
+            .social-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 10px 16px;
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                background: var(--bg-white);
+                color: var(--text-main);
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s;
+                text-decoration: none;
+                font-size: 0.875rem;
+                margin-top: 10px;
+                width: 100%;
+            }
+            .social-btn:hover {
+                background: var(--input-bg);
             }
 
             .stProgress > div > div > div > div {
-                background-color: var(--sf-yellow) !important;
-                box-shadow: 0 0 12px rgba(255, 214, 10, 0.5);
+                background-color: var(--brand-blue) !important;
                 border-radius: 10px;
             }
             
             button[data-baseweb="tab"] {
                 border-radius: 8px !important;
-                padding: 10px 20px !important;
+                padding: 8px 16px !important;
+            }
+            div[role="tablist"] {
+                padding: 4px;
+                background: var(--input-bg);
+                border-radius: 10px;
+                border: 1px solid var(--border-color);
+                margin-bottom: 24px;
             }
             
             .metric-card {
-                background-color: var(--apple-card);
-                border: 1px solid rgba(255,255,255,0.4);
+                background-color: var(--bg-white);
+                border: 1px solid var(--border-color);
                 border-radius: 16px;
                 padding: 24px;
                 text-align: center;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.05); /* Refined Apple Light Mode floating shadow */
-                backdrop-filter: blur(20px);
-                -webkit-backdrop-filter: blur(20px);
+                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); /* Modern Light Mode shadow */
             }
             .metric-title {
-                color: var(--apple-text-muted);
+                color: var(--text-muted);
                 font-size: 0.95rem;
                 font-weight: 600;
                 margin-bottom: 8px;
             }
             .metric-value {
-                color: var(--sf-blue-dark);
+                color: var(--brand-blue);
                 font-size: 2.2rem;
                 font-weight: 700;
             }
-            .metric-safe { background: rgba(52,199,89,0.15); border-color: rgba(52,199,89,0.2); }
-            .metric-safe .metric-value { color: var(--sf-mint); }
+            .metric-safe { background: #F0FDF4; border-color: #DCFCE7; }
+            .metric-safe .metric-value { color: #16A34A; }
             
-            .metric-warn { background: rgba(255,59,48,0.15); border-color: rgba(255,59,48,0.2); }
-            .metric-warn .metric-value { color: var(--sf-red); }
+            .metric-warn { background: #FEF2F2; border-color: #FEE2E2; }
+            .metric-warn .metric-value { color: #DC2626; }
             
-            .metric-empty .metric-value { color: var(--apple-placeholder); }
+            .metric-empty .metric-value { color: var(--text-muted); }
 
             .empty-chart {
-                background: var(--apple-card);
+                background: var(--bg-white);
                 border-radius: 16px;
                 height: 250px;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                border: 1px dashed var(--apple-placeholder);
-                backdrop-filter: blur(20px);
-                -webkit-backdrop-filter: blur(20px);
+                border: 1px dashed var(--border-color);
             }
 
         </style>
@@ -197,7 +320,6 @@ class ThemeManager:
         st.markdown('''
             <div class="mesh-shape-1"></div>
             <div class="mesh-shape-2"></div>
-            <div class="mesh-shape-3"></div>
         ''', unsafe_allow_html=True)
 
 class UIComponents:
@@ -247,45 +369,94 @@ class ExpenseTrackerApp:
             self.render_main_app()
 
     def render_auth(self):
-        UIComponents.render_hero(show_cta=False)
-        st.markdown("<div style='text-align:center; color:#86868B; margin-bottom: 2rem;'>Secure Access Portal</div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 4vh;'></div>", unsafe_allow_html=True)
         
-        col1, col2, col3 = st.columns([1, 1.5, 1])
-        with col2:
-            tab1, tab2 = st.tabs(["Sign In", "Create Account"])
+        spacer_l, center_col, spacer_r = st.columns([1, 8, 1])
+        
+        with center_col:
+            st.markdown("<div class='auth-container'>", unsafe_allow_html=True)
             
-            with tab1:
-                with st.form("login_form"):
-                    username = st.text_input("Username")
-                    password = st.text_input("Password", type="password")
-                    st.markdown("<div class='primary-btn'>", unsafe_allow_html=True)
-                    sub = st.form_submit_button("Authenticate", use_container_width=True)
-                    st.markdown("</div>", unsafe_allow_html=True)
-                    if sub:
-                        user_id = self.db.verify_user(username, password)
-                        if user_id:
-                            st.session_state['user_id'] = user_id
-                            st.session_state['username'] = username
-                            st.rerun()
-                        else:
-                            st.error("Invalid credentials.")
-                            
-            with tab2:
-                with st.form("register_form"):
-                    new_user = st.text_input("Username")
-                    new_pass = st.text_input("Password", type="password")
-                    conf_pass = st.text_input("Confirm Password", type="password")
-                    st.markdown("<div class='primary-btn'>", unsafe_allow_html=True)
-                    sub_reg = st.form_submit_button("Register", use_container_width=True)
-                    st.markdown("</div>", unsafe_allow_html=True)
-                    if sub_reg:
-                        if new_pass == conf_pass and len(new_pass) >= 8:
-                            if self.db.create_user(new_user, new_pass):
-                                st.success("Account created. You can now sign in.")
+            col_market, col_form = st.columns([1.2, 1])
+            
+            with col_market:
+                st.markdown("""
+                    <div class="auth-marketing-col">
+                        <div class="badge">✨ New: AI Budgeting Insights v2.0</div>
+                        <h1 class="marketing-title">Master Your <br><span>Student Finances</span><br> With Ease.</h1>
+                        
+                        <ul class="feature-list">
+                            <li><div class="feature-icon">📊</div> Real-time expense tracking & analytics</li>
+                            <li><div class="feature-icon">🤖</div> Smart AI-driven budget recommendations</li>
+                            <li><div class="feature-icon">🎯</div> Sinking funds for long-term goals</li>
+                        </ul>
+                        
+                        <div class="social-proof">
+                            <div class="avatar-group">
+                                <div class="avatar" style="background:#DBEAFE;"></div>
+                                <div class="avatar" style="background:#BBF7D0;"></div>
+                                <div class="avatar" style="background:#FEF08A;"></div>
+                            </div>
+                            <div class="proof-text">
+                                Join <strong>10,000+</strong> students managing<br>their campus life effectively!
+                            </div>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            with col_form:
+                st.markdown("<div style='padding: 40px;'>", unsafe_allow_html=True)
+                st.markdown("<h2 style='font-size:2rem; font-weight:700; margin-bottom: 24px; color:var(--text-main);'>Welcome Back</h2>", unsafe_allow_html=True)
+                
+                tab_signin, tab_signup = st.tabs(["Sign In", "Create Account"])
+                
+                with tab_signin:
+                    with st.form("login_form", clear_on_submit=False):
+                        username = st.text_input("Email/Username", placeholder="e.g. alex@student.edu")
+                        password = st.text_input("Password", type="password", placeholder="••••••••")
+                        st.markdown("<div style='display:flex; justify-content:flex-end; margin-top:-10px; margin-bottom:16px;'><a href='#' style='font-size:0.875rem; color:var(--brand-blue); text-decoration:none;'>Forgot password?</a></div>", unsafe_allow_html=True)
+                        
+                        st.markdown("<div class='primary-btn'>", unsafe_allow_html=True)
+                        sub = st.form_submit_button("Authenticate Account →", use_container_width=True)
+                        st.markdown("</div>", unsafe_allow_html=True)
+                        if sub:
+                            user_id = self.db.verify_user(username, password)
+                            if user_id:
+                                st.session_state['user_id'] = user_id
+                                st.session_state['username'] = username
+                                st.rerun()
                             else:
-                                st.error("Username exists.")
-                        else:
-                            st.error("Invalid password criteria.")
+                                st.error("Invalid credentials.")
+                                
+                    st.markdown("""
+                        <div style="text-align:center; margin:24px 0; position:relative;">
+                            <hr style="border:none; border-top:1px solid var(--border-color); margin:0;" />
+                            <span style="position:absolute; top:-10px; left:50%; transform:translateX(-50%); background:var(--bg-white); padding:0 10px; color:var(--text-muted); font-size:0.875rem;">Or continue with</span>
+                        </div>
+                        <button class="social-btn"><span style="margin-right:10px;">G</span> Continue with Google</button>
+                        <button class="social-btn"><span style="margin-right:10px;">Git</span> Continue with GitHub</button>
+                    """, unsafe_allow_html=True)
+                            
+                with tab_signup:
+                    with st.form("register_form", clear_on_submit=True):
+                        new_user = st.text_input("Username", placeholder="Choose a username")
+                        new_pass = st.text_input("Password", type="password", placeholder="Create a strong password")
+                        conf_pass = st.text_input("Confirm Password", type="password", placeholder="Repeat your password")
+                        
+                        st.markdown("<div class='primary-btn'>", unsafe_allow_html=True)
+                        sub_reg = st.form_submit_button("Create My Account →", use_container_width=True)
+                        st.markdown("</div>", unsafe_allow_html=True)
+                        if sub_reg:
+                            if new_pass == conf_pass and len(new_pass) >= 8:
+                                if self.db.create_user(new_user, new_pass):
+                                    st.success("Account created. You can now sign in.")
+                                else:
+                                    st.error("Username exists.")
+                            else:
+                                st.error("Invalid password criteria.")
+                                
+                st.markdown("</div>", unsafe_allow_html=True) # end padding
+            
+            st.markdown("</div>", unsafe_allow_html=True) # end auth-container
 
     def render_main_app(self):
         user_id = st.session_state['user_id']
