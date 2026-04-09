@@ -22,7 +22,7 @@ class ThemeManager:
 
             :root {
                 --apple-bg: #F2F2F7;
-                --apple-card: rgba(255, 255, 255, 0.65);
+                --apple-card: rgba(255, 255, 255, 0.35);
                 --apple-text: #1C1C1E;
                 --apple-text-muted: #8E8E93;
                 --apple-placeholder: #86868B;
@@ -40,7 +40,8 @@ class ThemeManager:
             [class*="css"] {
                 font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif !important;
             }
-            .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+            .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"], 
+            [data-baseweb="tab-panel"], div[role="tabpanel"], div[data-testid="stVerticalBlock"] {
                 background-color: transparent !important;
                 color: var(--apple-text);
             }
@@ -168,10 +169,10 @@ class ThemeManager:
                 font-size: 2.2rem;
                 font-weight: 700;
             }
-            .metric-safe { background: rgba(52,199,89,0.05); border-color: rgba(52,199,89,0.1); }
+            .metric-safe { background: rgba(52,199,89,0.15); border-color: rgba(52,199,89,0.2); }
             .metric-safe .metric-value { color: var(--sf-mint); }
             
-            .metric-warn { background: rgba(255,59,48,0.05); border-color: rgba(255,59,48,0.1); }
+            .metric-warn { background: rgba(255,59,48,0.15); border-color: rgba(255,59,48,0.2); }
             .metric-warn .metric-value { color: var(--sf-red); }
             
             .metric-empty .metric-value { color: var(--apple-placeholder); }
