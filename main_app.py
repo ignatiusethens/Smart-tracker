@@ -34,12 +34,14 @@ class ThemeManager:
                 --apple-border: rgba(0,0,0,0.08);
             }
 
-            html, body, [class*="css"] {
-                font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif !important;
+            html, body {
                 background-color: var(--apple-bg);
             }
-            .stApp {
-                background-color: transparent;
+            [class*="css"] {
+                font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif !important;
+            }
+            .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+                background-color: transparent !important;
                 color: var(--apple-text);
             }
             
@@ -52,19 +54,19 @@ class ThemeManager:
 
             .mesh-shape-1 {
                 position: fixed; top: -10%; left: -10%; width: 50vw; height: 50vw;
-                background: radial-gradient(circle, rgba(0, 122, 255, 0.12) 0%, rgba(255,255,255,0) 70%);
+                background: radial-gradient(circle, rgba(0, 122, 255, 0.25) 0%, rgba(255,255,255,0) 70%);
                 border-radius: 50%; filter: blur(60px); z-index: -10;
                 animation: mesh-float 20s infinite alternate; pointer-events: none;
             }
             .mesh-shape-2 {
                 position: fixed; bottom: -10%; right: -10%; width: 60vw; height: 60vw;
-                background: radial-gradient(circle, rgba(52, 199, 89, 0.10) 0%, rgba(255,255,255,0) 70%);
+                background: radial-gradient(circle, rgba(52, 199, 89, 0.20) 0%, rgba(255,255,255,0) 70%);
                 border-radius: 50%; filter: blur(80px); z-index: -10;
                 animation: mesh-float 25s infinite alternate-reverse; pointer-events: none;
             }
             .mesh-shape-3 {
                 position: fixed; top: 20%; right: 20%; width: 40vw; height: 40vw;
-                background: radial-gradient(circle, rgba(255, 204, 0, 0.08) 0%, rgba(255,255,255,0) 70%);
+                background: radial-gradient(circle, rgba(255, 204, 0, 0.18) 0%, rgba(255,255,255,0) 70%);
                 border-radius: 50%; filter: blur(70px); z-index: -10;
                 animation: mesh-float 22s infinite alternate; pointer-events: none;
             }
