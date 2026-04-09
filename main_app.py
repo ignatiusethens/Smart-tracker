@@ -162,11 +162,11 @@ class ThemeManager:
 
 class UIComponents:
     @staticmethod
-    def render_hero(show_cta=True):
-        st.markdown('''
+    def render_hero(show_cta=True, show_subtitle=True):
+        st.markdown(f'''
             <div style="padding: 4rem 0 2rem 0;">
                 <div class="hero-title" style="font-size: clamp(2rem, 5vw, 3rem);">SMART STUDENT EXPENSE TRACKER</div>
-                <div class="hero-subtitle" style="margin-top: 1rem; max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.5;">Stop wondering where your money went. Transform financial anxiety into complete confidence with a frictionless system designed to do the heavy lifting for you. Spend guilt-free, effortlessly build better habits, and finally feel in total control of your finances.</div>
+                {'<div class="hero-subtitle" style="margin-top: 1rem; max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.5;">Stop wondering where your money went. Transform financial anxiety into complete confidence with a frictionless system designed to do the heavy lifting for you. Spend guilt-free, effortlessly build better habits, and finally feel in total control of your finances.</div>' if show_subtitle else ''}
             </div>
         ''', unsafe_allow_html=True)
         # Visual Anchor
@@ -253,7 +253,7 @@ class ExpenseTrackerApp:
         analyzer = BudgetAnalyzer(expenses)
         
         # Hero
-        UIComponents.render_hero(show_cta=True)
+        UIComponents.render_hero(show_cta=True, show_subtitle=False)
 
         st.markdown("<div id='input-center'></div>", unsafe_allow_html=True)
         
