@@ -41,7 +41,8 @@ class ThemeManager:
                 font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif !important;
             }
             .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"], 
-            [data-baseweb="tab-panel"], div[role="tabpanel"], div[data-testid="stVerticalBlock"] {
+            [data-baseweb="tab-panel"], div[role="tabpanel"], div[data-testid="stVerticalBlock"],
+            div[data-testid="stHorizontalBlock"], div[data-testid="column"] {
                 background-color: transparent !important;
                 color: var(--apple-text);
             }
