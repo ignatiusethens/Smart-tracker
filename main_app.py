@@ -21,25 +21,52 @@ class ThemeManager:
             @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;800&display=swap');
 
             :root {
-                --apple-bg: #FFFFFF;
-                --apple-card: #F5F5F7;
-                --apple-text: #1D1D1F;
-                --apple-text-muted: #3A3A3C;
+                --apple-bg: #F2F2F7;
+                --apple-card: #FFFFFF;
+                --apple-text: #1C1C1E;
+                --apple-text-muted: #8E8E93;
                 --apple-placeholder: #86868B;
                 --sf-blue: #007AFF;
                 --sf-blue-dark: #0071E3;
                 --sf-mint: #34C759;
                 --sf-red: #FF3B30;
-                --sf-yellow: #FFD60A;
-                --apple-border: #D2D2D7;
+                --sf-yellow: #FFCC00;
+                --apple-border: rgba(0,0,0,0.08);
             }
 
             html, body, [class*="css"] {
                 font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif !important;
+                background-color: var(--apple-bg);
             }
             .stApp {
-                background-color: var(--apple-bg);
+                background-color: transparent;
                 color: var(--apple-text);
+            }
+            
+            @keyframes mesh-float {
+                0% { transform: translate(0px, 0px) scale(1); }
+                33% { transform: translate(30px, -50px) scale(1.1); }
+                66% { transform: translate(-20px, 20px) scale(0.9); }
+                100% { transform: translate(0px, 0px) scale(1); }
+            }
+
+            .mesh-shape-1 {
+                position: fixed; top: -10%; left: -10%; width: 50vw; height: 50vw;
+                background: radial-gradient(circle, rgba(0, 122, 255, 0.12) 0%, rgba(255,255,255,0) 70%);
+                border-radius: 50%; filter: blur(60px); z-index: -10;
+                animation: mesh-float 20s infinite alternate; pointer-events: none;
+            }
+            .mesh-shape-2 {
+                position: fixed; bottom: -10%; right: -10%; width: 60vw; height: 60vw;
+                background: radial-gradient(circle, rgba(52, 199, 89, 0.10) 0%, rgba(255,255,255,0) 70%);
+                border-radius: 50%; filter: blur(80px); z-index: -10;
+                animation: mesh-float 25s infinite alternate-reverse; pointer-events: none;
+            }
+            .mesh-shape-3 {
+                position: fixed; top: 20%; right: 20%; width: 40vw; height: 40vw;
+                background: radial-gradient(circle, rgba(255, 204, 0, 0.08) 0%, rgba(255,255,255,0) 70%);
+                border-radius: 50%; filter: blur(70px); z-index: -10;
+                animation: mesh-float 22s infinite alternate; pointer-events: none;
             }
             
             #MainMenu {visibility: hidden;}
@@ -120,11 +147,11 @@ class ThemeManager:
             
             .metric-card {
                 background-color: var(--apple-card);
-                border: 1px solid var(--apple-border);
+                border: 1px solid rgba(0,0,0,0.03);
                 border-radius: 16px;
                 padding: 24px;
                 text-align: center;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+                box-shadow: 0 4px 20px rgba(0,0,0,0.05); /* Refined Apple Light Mode floating shadow */
             }
             .metric-title {
                 color: var(--apple-text-muted);
@@ -137,10 +164,10 @@ class ThemeManager:
                 font-size: 2.2rem;
                 font-weight: 700;
             }
-            .metric-safe { background: rgba(52,199,89,0.05); border-color: rgba(52,199,89,0.2); }
+            .metric-safe { background: rgba(52,199,89,0.05); border-color: rgba(52,199,89,0.1); }
             .metric-safe .metric-value { color: var(--sf-mint); }
             
-            .metric-warn { background: rgba(255,59,48,0.05); border-color: rgba(255,59,48,0.2); }
+            .metric-warn { background: rgba(255,59,48,0.05); border-color: rgba(255,59,48,0.1); }
             .metric-warn .metric-value { color: var(--sf-red); }
             
             .metric-empty .metric-value { color: var(--apple-placeholder); }
@@ -159,6 +186,11 @@ class ThemeManager:
         </style>
         """
         st.markdown(custom_css, unsafe_allow_html=True)
+        st.markdown('''
+            <div class="mesh-shape-1"></div>
+            <div class="mesh-shape-2"></div>
+            <div class="mesh-shape-3"></div>
+        ''', unsafe_allow_html=True)
 
 class UIComponents:
     @staticmethod
