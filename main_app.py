@@ -22,13 +22,16 @@ class ThemeManager:
 
             :root {
                 --apple-bg: #FFFFFF;
-                --apple-card: #F2F2F7;
-                --apple-text: #000000;
-                --apple-text-muted: #8E8E93;
+                --apple-card: #F5F5F7;
+                --apple-text: #1D1D1F;
+                --apple-text-muted: #3A3A3C;
+                --apple-placeholder: #86868B;
                 --sf-blue: #007AFF;
-                --sf-mint: #00C7BE;
+                --sf-blue-dark: #0071E3;
+                --sf-mint: #34C759;
                 --sf-red: #FF3B30;
-                --sf-yellow: #FFCC00;
+                --sf-yellow: #FFD60A;
+                --apple-border: #D2D2D7;
             }
 
             html, body, [class*="css"] {
@@ -65,8 +68,8 @@ class ThemeManager:
             div[data-baseweb="select"] > div, 
             div[data-baseweb="number-input"] > div,
             textarea {
-                background-color: rgba(0, 0, 0, 0.03) !important;
-                border: 1px solid rgba(0, 0, 0, 0.1) !important;
+                background-color: rgba(29, 29, 31, 0.05) !important;
+                border: 1px solid var(--apple-border) !important;
                 border-radius: 12px !important;
                 color: var(--apple-text) !important;
             }
@@ -77,13 +80,14 @@ class ThemeManager:
             }
 
             div.stButton > button:first-child {
-                background: rgba(0, 0, 0, 0.05);
+                background: rgba(255, 255, 255, 0.7);
                 color: var(--apple-text);
-                border: 1px solid rgba(0, 0, 0, 0.05);
+                border: 1px solid var(--apple-border);
                 border-radius: 14px;
                 font-weight: 500;
                 transition: all 0.3s ease;
-                backdrop-filter: blur(10px);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
             }
             div.stButton.primary-btn > button:first-child {
                 background: var(--sf-blue);
@@ -116,38 +120,40 @@ class ThemeManager:
             
             .metric-card {
                 background-color: var(--apple-card);
-                border: 1px solid rgba(0,0,0,0.05);
-                border-radius: 20px;
+                border: 1px solid var(--apple-border);
+                border-radius: 16px;
                 padding: 24px;
                 text-align: center;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+                box-shadow: 0 4px 15px rgba(0,0,0,0.03);
             }
             .metric-title {
                 color: var(--apple-text-muted);
-                font-size: 0.9rem;
-                font-weight: 500;
+                font-size: 0.95rem;
+                font-weight: 600;
                 margin-bottom: 8px;
             }
             .metric-value {
-                color: var(--apple-text);
-                font-size: 2rem;
+                color: var(--sf-blue-dark);
+                font-size: 2.2rem;
                 font-weight: 700;
             }
-            .metric-safe { background: linear-gradient(80deg, #FFFFFF, #E8F8F5); border-color: rgba(0,199,190,0.3); }
+            .metric-safe { background: rgba(52,199,89,0.05); border-color: rgba(52,199,89,0.2); }
             .metric-safe .metric-value { color: var(--sf-mint); }
             
-            .metric-warn { background: linear-gradient(80deg, #FFFFFF, #FDEDEC); border-color: rgba(255,59,48,0.3); }
+            .metric-warn { background: rgba(255,59,48,0.05); border-color: rgba(255,59,48,0.2); }
             .metric-warn .metric-value { color: var(--sf-red); }
+            
+            .metric-empty .metric-value { color: var(--apple-placeholder); }
 
             .empty-chart {
-                background: linear-gradient(135deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.04) 100%);
-                border-radius: 20px;
+                background: var(--apple-card);
+                border-radius: 16px;
                 height: 250px;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                border: 1px dashed rgba(0,0,0,0.1);
+                border: 1px dashed var(--apple-border);
             }
 
         </style>
@@ -202,7 +208,7 @@ class ExpenseTrackerApp:
 
     def render_auth(self):
         UIComponents.render_hero(show_cta=False)
-        st.markdown("<div style='text-align:center; color:#AEAEB2; margin-bottom: 2rem;'>Secure Access Portal</div>", unsafe_allow_html=True)
+        st.markdown("<div style='text-align:center; color:#86868B; margin-bottom: 2rem;'>Secure Access Portal</div>", unsafe_allow_html=True)
         
         col1, col2, col3 = st.columns([1, 1.5, 1])
         with col2:
@@ -257,7 +263,7 @@ class ExpenseTrackerApp:
         
         with tab_mpesa:
             with st.form("mpesa_form"):
-                st.markdown("<div style='color: #8E8E93; margin-bottom:10px;'>Paste Safaricom SMS for intelligent parsing</div>", unsafe_allow_html=True)
+                st.markdown("<div style='color: #86868B; margin-bottom:10px;'>Paste Safaricom SMS for intelligent parsing</div>", unsafe_allow_html=True)
                 sms_text = st.text_area("SMS Content", placeholder="Ksh 150.00 paid to KHALID KHALID on...", label_visibility="collapsed", height=100)
                 st.markdown("<div class='primary-btn'>", unsafe_allow_html=True)
                 sub_sms = st.form_submit_button("Extract & Autofill", use_container_width=True)
@@ -328,7 +334,9 @@ class ExpenseTrackerApp:
             
             st.markdown("<br>", unsafe_allow_html=True)
             with col4: st.markdown(metric_card("Safe-to-Spend (Daily)", f"Ksh {safe:,.0f}", "metric-safe"), unsafe_allow_html=True)
-            with col5: st.markdown(metric_card("Utilization", f"{pct:.1f}%", "metric-warn" if pct>=100 else ""), unsafe_allow_html=True)
+            with col5: 
+                util_cls = "metric-empty" if pct == 0 else ("metric-warn" if pct>=80 else "")
+                st.markdown(metric_card("Utilization", f"{pct:.1f}%", util_cls), unsafe_allow_html=True)
 
             st.markdown("<br>", unsafe_allow_html=True)
             c1, c2 = st.columns(2)
@@ -367,9 +375,9 @@ class ExpenseTrackerApp:
                 UIComponents.render_empty_state("No active goals")
             else:
                 for g in goals:
-                    st.markdown(f"**{g.name}**")
+                    st.markdown(f"<span style='color:#1D1D1F; font-weight:600;'>{g.name}</span>", unsafe_allow_html=True)
                     p = min(1.0, g.current_amount / g.target_amount) if g.target_amount > 0 else 0
-                    st.markdown(f"<span style='color:#AEAEB2; font-size:0.9rem;'>{p*100:.1f}% — Ksh {g.current_amount:,.0f} of {g.target_amount:,.0f}</span>", unsafe_allow_html=True)
+                    st.markdown(f"<span style='color:#3A3A3C; font-size:0.9rem;'>{p*100:.1f}% — Ksh {g.current_amount:,.0f} of {g.target_amount:,.0f}</span>", unsafe_allow_html=True)
                     st.progress(p)
                     
                     with st.form(f"fund_{g.id}"):
