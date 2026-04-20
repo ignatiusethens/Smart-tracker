@@ -12,6 +12,8 @@ class DBUser(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String, unique=True, nullable=False)
     password_hash = Column(String, nullable=False)
+    reset_code_hash = Column(String, nullable=True)
+    reset_expiry = Column(Float, nullable=True)
 
 class DBExpense(Base):
     __tablename__ = 'expenses'
@@ -50,6 +52,18 @@ class DatabaseManager:
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
 
+        from sqlalchemy import text
+        try:
+            with self.engine.connect() as conn:
+                conn.execute(text("SELECT reset_code_hash FROM users LIMIT 1"))
+        except Exception:
+            try:
+                with self.engine.connect() as conn:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN reset_code_hash VARCHAR"))
+                    conn.execute(text("ALTER TABLE users ADD COLUMN reset_expiry FLOAT"))
+            except Exception:
+                pass
+
     def create_user(self, username: str, password: str) -> bool:
         """Creates a new user. Returns True if successful, False if username already exists."""
         with self.Session() as session:
@@ -75,16 +89,43 @@ class DatabaseManager:
                 return user.id
             return None
 
-    def update_password(self, username: str, new_password: str) -> bool:
-        """Updates the password for an existing user. Returns True if successful, False if user not found."""
+    def generate_reset_code(self, username: str) -> Optional[str]:
+        """Generates a 6-digit code, hashes it, stores it with expiry. Returns the raw code."""
+        import random, time
         with self.Session() as session:
             user = session.query(DBUser).filter_by(username=username).first()
             if not user:
+                return None
+            
+            code = f"{random.randint(0, 999999):06d}"
+            salt = bcrypt.gensalt()
+            hashed = bcrypt.hashpw(code.encode('utf-8'), salt).decode('utf-8')
+            
+            user.reset_code_hash = hashed
+            user.reset_expiry = time.time() + 900 # 15 minutes
+            session.commit()
+            return code
+
+    def verify_and_update_password(self, username: str, code: str, new_password: str) -> bool:
+        """Verifies code and expiry, then updates password."""
+        import time
+        with self.Session() as session:
+            user = session.query(DBUser).filter_by(username=username).first()
+            if not user or not user.reset_code_hash or not user.reset_expiry:
+                return False
+                
+            if time.time() > user.reset_expiry:
+                return False # Expired
+                
+            if not bcrypt.checkpw(code.encode('utf-8'), user.reset_code_hash.encode('utf-8')):
                 return False
                 
             salt = bcrypt.gensalt()
-            hashed = bcrypt.hashpw(new_password.encode('utf-8'), salt).decode('utf-8')
-            user.password_hash = hashed
+            hashed_pass = bcrypt.hashpw(new_password.encode('utf-8'), salt).decode('utf-8')
+            user.password_hash = hashed_pass
+            # Nullify code
+            user.reset_code_hash = None
+            user.reset_expiry = None
             session.commit()
             return True
 

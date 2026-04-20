@@ -10,6 +10,41 @@ import urllib.parse
 from models import Expense, BudgetAnalyzer, Goal, InsightsEngine
 from database import DatabaseManager
 
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+class EmailService:
+    @staticmethod
+    def send_reset_code(to_email: str, code: str):
+        smtp_server = os.environ.get("SMTP_SERVER")
+        smtp_port = int(os.environ.get("SMTP_PORT", 587))
+        smtp_user = os.environ.get("SMTP_USER")
+        smtp_pass = os.environ.get("SMTP_PASS")
+        
+        if not all([smtp_server, smtp_user, smtp_pass]):
+            st.toast(f"MOCK EMAIL: Your reset code is {code}", icon="📧")
+            return True
+            
+        try:
+            msg = MIMEMultipart()
+            msg['From'] = smtp_user
+            msg['To'] = to_email
+            msg['Subject'] = "Smart Tracker - Password Reset Verification Code"
+            
+            body = f"Hello,\n\nYour 6-digit password reset verification code is:\n\n{code}\n\nThis code will expire in 15 minutes."
+            msg.attach(MIMEText(body, 'plain'))
+            
+            server = smtplib.SMTP(smtp_server, smtp_port)
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+            server.quit()
+            return True
+        except Exception as e:
+            st.error(f"Failed to send email: {e}")
+            return False
+
 class ThemeManager:
     @staticmethod
     def apply_theme():
@@ -450,22 +485,52 @@ Join <strong>10,000+</strong> students managing<br>their campus life effectively
                                 st.error("Invalid password criteria.")
                                 
                 with tab_forgot:
-                    with st.form("forgot_password_form", clear_on_submit=True):
-                        username = st.text_input("Username", placeholder="e.g. alex@student.edu")
-                        new_pass = st.text_input("New Password", type="password", placeholder="Create a strong password")
-                        conf_pass = st.text_input("Confirm New Password", type="password", placeholder="Repeat your password")
+                    if 'reset_stage' not in st.session_state:
+                        st.session_state['reset_stage'] = 1
                         
-                        st.markdown("<div class='primary-btn'>", unsafe_allow_html=True)
-                        sub_forgot = st.form_submit_button("Reset Password →", use_container_width=True)
-                        st.markdown("</div>", unsafe_allow_html=True)
-                        if sub_forgot:
-                            if new_pass == conf_pass and len(new_pass) >= 8:
-                                if self.db.update_password(username, new_pass):
-                                    st.success("Password updated successfully. You can now sign in.")
+                    if st.session_state['reset_stage'] == 1:
+                        with st.form("forgot_password_form_1"):
+                            forgot_usr = st.text_input("Email/Username", placeholder="e.g. alex@student.edu")
+                            st.markdown("<div class='primary-btn'>", unsafe_allow_html=True)
+                            if st.form_submit_button("Send Verification Code", use_container_width=True):
+                                code = self.db.generate_reset_code(forgot_usr)
+                                if code:
+                                    st.session_state['reset_username'] = forgot_usr
+                                    EmailService.send_reset_code(forgot_usr, code)
+                                    st.session_state['reset_stage'] = 2
+                                    st.rerun()
                                 else:
                                     st.error("User not found.")
-                            else:
-                                st.error("Passwords must match and be at least 8 characters.")
+                            st.markdown("</div>", unsafe_allow_html=True)
+                    
+                    elif st.session_state['reset_stage'] == 2:
+                        st.info(f"Wait for the email code sent to: {st.session_state.get('reset_username', '')}")
+                        with st.form("forgot_password_form_2", clear_on_submit=True):
+                            code_input = st.text_input("6-Digit Code", placeholder="123456")
+                            new_pass = st.text_input("New Password", type="password", placeholder="Create a strong password")
+                            conf_pass = st.text_input("Confirm New Password", type="password", placeholder="Repeat your password")
+                            
+                            c1, c2 = st.columns([1, 2])
+                            with c1:
+                                if st.form_submit_button("Cancel"):
+                                    st.session_state['reset_stage'] = 1
+                                    st.rerun()
+                            with c2:
+                                st.markdown("<div class='primary-btn'>", unsafe_allow_html=True)
+                                if st.form_submit_button("Verify & Reset Password", use_container_width=True):
+                                    if new_pass == conf_pass and len(new_pass) >= 8:
+                                        usr = st.session_state.get('reset_username')
+                                        if self.db.verify_and_update_password(usr, code_input, new_pass):
+                                            st.success("Password updated successfully. You can now sign in.")
+                                            st.session_state['reset_stage'] = 1
+                                            if 'reset_username' in st.session_state:
+                                                del st.session_state['reset_username']
+                                            st.rerun()
+                                        else:
+                                            st.error("Invalid or expired code.")
+                                    else:
+                                        st.error("Passwords must match and be at least 8 characters.")
+                                st.markdown("</div>", unsafe_allow_html=True)
 
                 st.markdown("</div>", unsafe_allow_html=True) # end padding
             
